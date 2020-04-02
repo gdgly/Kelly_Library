@@ -144,9 +144,9 @@ void PID_Init
 	pid->IntergralSum = *pid->Output;
 	pid->LastInput = *pid->Input;
     PID_SetOutputLimits(pid, outMin, outMax);
+	pid->CyclesPerCompute = cyclesPerCompute;
 	pid->SampleTime = timerTicksPerSample * pid->CyclesPerCompute;
 	pid->TimerFreq = timerFreq;
-	pid->CyclesPerCompute = cyclesPerCompute;
 }
 
 static uint32_t (*Millis)(void);

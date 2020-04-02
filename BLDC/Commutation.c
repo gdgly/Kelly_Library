@@ -89,9 +89,9 @@ void BLDC_Commutation_MapCommuntationTableRunCalibration
 	commutatePhaseAC(pwm);
 	if(enablePhaseABC) enablePhaseABC();
 	delay(delayTime);
-	commutation->CommuntationTableCW[commutation->GetHallState()].SetPhasePWM	= setPWMPhaseBC;
+	commutation->CommuntationTableCW[commutation->GetHallState()].SetPhasePWM		= setPWMPhaseBC;
 	commutation->CommuntationTableCW[commutation->GetHallState()].ActivatePhase 	= commutatePhaseBC;
-	commutation->CommuntationTableCCW[commutation->GetHallState()].SetPhasePWM 	= setPWMPhaseCB;
+	commutation->CommuntationTableCCW[commutation->GetHallState()].SetPhasePWM 		= setPWMPhaseCB;
 	commutation->CommuntationTableCCW[commutation->GetHallState()].ActivatePhase 	= commutatePhaseCB;
 	if (returnIndexBC) *returnIndexBC = commutation->GetHallState();
 	
@@ -101,9 +101,9 @@ void BLDC_Commutation_MapCommuntationTableRunCalibration
 	commutatePhaseBC(pwm);
 	if(enablePhaseABC) enablePhaseABC();
 	delay(delayTime);
-	commutation->CommuntationTableCW[commutation->GetHallState()].SetPhasePWM 	= setPWMPhaseBA;
+	commutation->CommuntationTableCW[commutation->GetHallState()].SetPhasePWM 		= setPWMPhaseBA;
 	commutation->CommuntationTableCW[commutation->GetHallState()].ActivatePhase 	= commutatePhaseBA;
-	commutation->CommuntationTableCCW[commutation->GetHallState()].SetPhasePWM 	= setPWMPhaseAB;
+	commutation->CommuntationTableCCW[commutation->GetHallState()].SetPhasePWM 		= setPWMPhaseAB;
 	commutation->CommuntationTableCCW[commutation->GetHallState()].ActivatePhase 	= commutatePhaseAB;
 	if (returnIndexBA) *returnIndexBA = commutation->GetHallState();
 	
@@ -113,9 +113,9 @@ void BLDC_Commutation_MapCommuntationTableRunCalibration
 	commutatePhaseBA(pwm);
 	if(enablePhaseABC) enablePhaseABC();
 	delay(delayTime);
-	commutation->CommuntationTableCW[commutation->GetHallState()].SetPhasePWM 	= setPWMPhaseCA;
+	commutation->CommuntationTableCW[commutation->GetHallState()].SetPhasePWM 		= setPWMPhaseCA;
 	commutation->CommuntationTableCW[commutation->GetHallState()].ActivatePhase 	= commutatePhaseCA;
-	commutation->CommuntationTableCCW[commutation->GetHallState()].SetPhasePWM 	= setPWMPhaseAC;
+	commutation->CommuntationTableCCW[commutation->GetHallState()].SetPhasePWM 		= setPWMPhaseAC;
 	commutation->CommuntationTableCCW[commutation->GetHallState()].ActivatePhase 	= commutatePhaseAC;
 	if (returnIndexCA) *returnIndexCA = commutation->GetHallState();
 	
@@ -125,9 +125,9 @@ void BLDC_Commutation_MapCommuntationTableRunCalibration
 	commutatePhaseCA(pwm);
 	if(enablePhaseABC) enablePhaseABC();
 	delay(delayTime);
-	commutation->CommuntationTableCW[commutation->GetHallState()].SetPhasePWM 	= setPWMPhaseCB;
+	commutation->CommuntationTableCW[commutation->GetHallState()].SetPhasePWM 		= setPWMPhaseCB;
 	commutation->CommuntationTableCW[commutation->GetHallState()].ActivatePhase 	= commutatePhaseCB;
-	commutation->CommuntationTableCCW[commutation->GetHallState()].SetPhasePWM 	= setPWMPhaseBC;
+	commutation->CommuntationTableCCW[commutation->GetHallState()].SetPhasePWM 		= setPWMPhaseBC;
 	commutation->CommuntationTableCCW[commutation->GetHallState()].ActivatePhase 	= commutatePhaseBC;
 	if (returnIndexCB) *returnIndexCB = commutation->GetHallState();
 	
@@ -137,9 +137,9 @@ void BLDC_Commutation_MapCommuntationTableRunCalibration
 	commutatePhaseCB(pwm);
 	if(enablePhaseABC) enablePhaseABC();
 	delay(delayTime);
-	commutation->CommuntationTableCW[commutation->GetHallState()].SetPhasePWM 	= setPWMPhaseAB;
+	commutation->CommuntationTableCW[commutation->GetHallState()].SetPhasePWM 		= setPWMPhaseAB;
 	commutation->CommuntationTableCW[commutation->GetHallState()].ActivatePhase 	= commutatePhaseAB;
-	commutation->CommuntationTableCCW[commutation->GetHallState()].SetPhasePWM 	= setPWMPhaseBA;
+	commutation->CommuntationTableCCW[commutation->GetHallState()].SetPhasePWM 		= setPWMPhaseBA;
 	commutation->CommuntationTableCCW[commutation->GetHallState()].ActivatePhase 	= commutatePhaseBA;
 	if (returnIndexAB) *returnIndexAB = commutation->GetHallState();
 	
@@ -147,11 +147,11 @@ void BLDC_Commutation_MapCommuntationTableRunCalibration
 //	setPWMPhaseAB(pwm);
 	commutatePhaseCB(pwm);
 	commutatePhaseAB(pwm);
-	enablePhaseABC();
+	if(enablePhaseABC) enablePhaseABC();
 	delay(delayTime);
-	commutation->CommuntationTableCW[commutation->GetHallState()].SetPhasePWM 	= setPWMPhaseAC;
+	commutation->CommuntationTableCW[commutation->GetHallState()].SetPhasePWM 		= setPWMPhaseAC;
 	commutation->CommuntationTableCW[commutation->GetHallState()].ActivatePhase 	= commutatePhaseAC;
-	commutation->CommuntationTableCCW[commutation->GetHallState()].SetPhasePWM 	= setPWMPhaseCA;
+	commutation->CommuntationTableCCW[commutation->GetHallState()].SetPhasePWM 		= setPWMPhaseCA;
 	commutation->CommuntationTableCCW[commutation->GetHallState()].ActivatePhase 	= commutatePhaseCA;
 	if (returnIndexAC) *returnIndexAC = commutation->GetHallState();
 }
