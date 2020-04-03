@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 //Handles communication with the Adafruit Bluefruit Android/iOS App
 extern uint16_t Bluefruit_GetCharsInRxBuffer();
 extern uint8_t Bluefruit_RecvChar(char *);
@@ -8,13 +10,20 @@ uint8_t PacketBuffer[READ_BUFSIZE+1];
 // ----------------------------------------------------------------------------------------------
 // App Data
 // ----------------------------------------------------------------------------------------------
-bool UpdateFlag = 0; // Shared Update Flag //new data avaible
+bool UpdateFlag = 0; // Shared Update Flag, new data available
 bool ColorUpdateFlag = 0;
 bool ButtonUpdateFlag = 0;
 
 uint8_t ColorR;
 uint8_t ColorG;
 uint8_t ColorB;
+
+//typedef struct
+//{
+//	uint8_t R;
+//	uint8_t G;
+//	uint8_t B;
+//} BLUEFRUIT_COLOR_T;
 
 typedef struct
 {
@@ -43,51 +52,53 @@ BUTTON_PAD_T ButtonStates;
 uint8_t Bluefruit_RxPacket(void)
 {
 	static uint16_t packetIndex = 0;
-	static bool packetComplete;
-	static uint32_t startTime;// = Millis();
+	static uint32_t startTime;
+	//static bool packetComplete;
 
-	if (packetComplete)
-	{
-		packetComplete = 0;
-		packetIndex = 0;
-		startTime = Millis();
-	}
-	else if (Millis() - startTime > BUILD_PACKET_TIME_OUT) //start new packet if timed out
-	{
-		packetIndex = 0;
-		return 0;
-	}
-
+    // Check for completion
     if
 	(
 		(PacketBuffer[1] == 'B') && (replyidx == PACKET_BUTTON_LEN) ||
     	(PacketBuffer[1] == 'C') && (replyidx == PACKET_COLOR_LEN)
 	)
     {
-    	packetComplete = 1;
+    	packetIndex = 0;
     	return 1;
     }
 
-	while (Bluefruit_GetCharsInRxBuffer())
-	{
-		if (packetIndex < RX_BUFFER_SIZE)
-		{
-			Bluefruit_RecvChar(&Packet[packetIndex]);
-			if (Packet[packetIndex] == '!')
+    // Check for timeout
+    if (Millis() - startTime < BUILD_PACKET_TIME_OUT)
+    {
+    	if  (Bluefruit_GetCharsInRxBuffer())
+    	{
+			startTime = Millis();
+
+			while (Bluefruit_GetCharsInRxBuffer())
 			{
-				packetIndex = 0;
-				Packet[packetIndex] = '!';
+				if (packetIndex < RX_BUFFER_SIZE)
+				{
+					Bluefruit_RecvChar(&Packet[packetIndex]);
+					if (Packet[packetIndex] == '!')
+					{
+						packetIndex = 0;
+						Packet[packetIndex] = '!';
+					}
+					packetIndex++;
+				}
+				else
+				{
+					packetIndex = 0;
+				}
 			}
-			packetIndex++;
-		}
-		else
-		{
-			packetIndex = 0;
-			return 0;
-		}
+    	}
+	}
+	else //start new packet if timed out
+	{
+		packetIndex = 0;
 		startTime = Millis();
 	}
 
+	return 0;
 
 //  // check checksum!
 //  uint8_t xsum = 0;
@@ -103,41 +114,31 @@ uint8_t Bluefruit_RxPacket(void)
 //  {
 //    return 0;
 //  }
-
-  return 0;
 }
 
-/**************************************************************************/
-/*!
-    @brief  Constantly poll for new command or response data
-*/
-/**************************************************************************/
+
 void Bluefruit_ParsePacket()
 {
-//	/* Wait for new data to arrive */
-//	uint8_t len = buildPacket(&ble, BLE_READPACKET_TIMEOUT);
-//	if (len == 0)
-//		return;
-	//UpdateFlag = 1;
-
-	switch (packetbuffer[1])
+	switch (PacketBuffer[1])
 	{
-	case 'C':
-		ColorUpdateFlag = 1;
-		ColorR = packetbuffer[2];
-		ColorG = packetbuffer[3];
-		ColorB = packetbuffer[4];
-		break;
+		case 'C':
+			//ColorUpdateFlag = 1;
+			ColorR = packetbuffer[2];
+			ColorG = packetbuffer[3];
+			ColorB = packetbuffer[4];
+			break;
 
-	case 'B':
-		ButtonUpdateFlag = 1;
-		if (packetbuffer[3] - '0')
-			ButtonStates |= 1 << ((packetbuffer[2] - '0') - 1);
-		else
-			ButtonStates &= ~(1 << ((packetbuffer[2] - '0') - 1));
-		break;
-
+		case 'B':
+			//ButtonUpdateFlag = 1;
+			if (packetbuffer[3] - '0')
+				ButtonStates |= 1 << ((packetbuffer[2] - '0') - 1);
+			else
+				ButtonStates &= ~(1 << ((packetbuffer[2] - '0') - 1));
+			break;
 	}
+
+	PacketBuffer[1] = 0; //clear buffer
+
 
   //  // Color
 //  if (packetbuffer[1] == 'C')
@@ -234,127 +235,126 @@ void Bluefruit_ParsePacket()
 //  }
 }
 
-void Bluefruit_Poll(void)
+/**************************************************************************/
+/*!
+    @brief  Poll regularly for new data
+*/
+/**************************************************************************/
+bool Bluefruit_Poll(void)
 {
-	if(Bluefruit_BuildPacket())
+	if (Bluefruit_BuildPacket())
 	{
 		UpdateFlag = true;
 		Bluefruit_ParsePacket();
+		return true;
 	}
+	return false;
 }
 
-//bool Bluefruit_ButtonUp;
-//bool Bluefruit_ButtonDown;
-//bool Bluefruit_ButtonLeft;
-//bool Bluefruit_ButtonRight;
-//bool Bluefruit_Button1;
-//bool Bluefruit_Button2;
-//bool Bluefruit_Button3;
-//bool Bluefruit_Button4;
-////bool Bluefruit_GetButton1()			{return Bluefruit_Button1;}
-////bool Bluefruit_GetButton2()			{return Bluefruit_Button2;}
-////bool Bluefruit_GetButton3()			{return Bluefruit_Button3;}
-////bool Bluefruit_GetButton4()			{return Bluefruit_Button4;}
-////bool Bluefruit_GetButtonUp()			{return Bluefruit_ButtonUp;}
-////bool Bluefruit_GetButtonDown()		{return Bluefruit_ButtonDown;}
-////bool Bluefruit_GetButtonLeft()		{return Bluefruit_ButtonLeft;}
-////bool Bluefruit_GetButtonRight()		{return Bluefruit_ButtonRight;}
+char Bluefruit_GetPacketType() 	{return Packet[1];}
 
-char Bluefruit_GetPacketType()
-{
-	return Packet[1];
-}
+bool Bluefruit_GetUpdateFlag()		{return UpdateFlag;}
+void Bluefruit_ResetUpdateFlag()	{UpdateFlag = 0;}
 
-bool Bluefruit_GetUpdateFlag()			{return UpdateFlag;}
-void Bluefruit_ResetUpdateFlag()		{UpdateFlag = 0;}
-
-bool Bluefruit_GetColorUpdateFlag()		{return ColorUpdateFlag;}
-void Bluefruit_ResetColorUpdateFlag()	{ColorUpdateFlag = 0;}
+//bool Bluefruit_GetColorUpdateFlag()		{return ColorUpdateFlag;}
+//void Bluefruit_ResetColorUpdateFlag()		{ColorUpdateFlag = 0;}
 
 uint8_t Bluefruit_GetColorR() 		{return ColorR;}
 uint8_t Bluefruit_GetColorG() 		{return ColorG;}
 uint8_t Bluefruit_GetColorB() 		{return ColorB;}
 
-bool Bluefruit_GetButton1()			{return ButtonStates.Button1;}
-bool Bluefruit_GetButton2()			{return ButtonStates.Button2;}
-bool Bluefruit_GetButton3()			{return ButtonStates.Button3;}
-bool Bluefruit_GetButton4()			{return ButtonStates.Button4;}
-bool Bluefruit_GetButtonUp()		{return ButtonStates.ButtonUp;}
-bool Bluefruit_GetButtonDown()		{return ButtonStates.ButtonDown;}
-bool Bluefruit_GetButtonLeft()		{return ButtonStates.ButtonLeft;}
-bool Bluefruit_GetButtonRight()		{return ButtonStates.ButtonRight;}
+BUTTON_PAD_T Bluefruit_GetButtons()		{return ButtonStates;}
+BUTTON_PAD_T Bluefruit_ReadButtons()	{UpdateFlag = 0; return ButtonStates;}
 
-// ----------------------------------------------------------------------------------------------
-// COMMON SETTINGS
-// ----------------------------------------------------------------------------------------------
-//#define BUFSIZE                        256   // Size of the read buffer for incoming data
-#define FACTORYRESET_ENABLE				0
-#define VERBOSE_MODE                   true  // If set to 'true' enables debug output
+//bool Bluefruit_ReadButton1()		{UpdateFlag = 0; return ButtonStates.Button1;}
+//bool Bluefruit_ReadButton2()		{UpdateFlag = 0; return ButtonStates.Button2;}
+//bool Bluefruit_ReadButton3()		{UpdateFlag = 0; return ButtonStates.Button3;}
+//bool Bluefruit_ReadtButton4()		{UpdateFlag = 0; return ButtonStates.Button4;}
+//bool Bluefruit_ReadtButtonUp()		{UpdateFlag = 0; return ButtonStates.ButtonUp;}
+//bool Bluefruit_ReadButtonDown()		{UpdateFlag = 0; return ButtonStates.ButtonDown;}
+//bool Bluefruit_ReadButtonLeft()		{UpdateFlag = 0; return ButtonStates.ButtonLeft;}
+//bool Bluefruit_ReadButtonRight()	{UpdateFlag = 0; return ButtonStates.ButtonRight;}
+//
+//bool Bluefruit_GetButton1()			{return ButtonStates.Button1;}
+//bool Bluefruit_GetButton2()			{return ButtonStates.Button2;}
+//bool Bluefruit_GetButton3()			{return ButtonStates.Button3;}
+//bool Bluefruit_GetButton4()			{return ButtonStates.Button4;}
+//bool Bluefruit_GetButtonUp()		{return ButtonStates.ButtonUp;}
+//bool Bluefruit_GetButtonDown()		{return ButtonStates.ButtonDown;}
+//bool Bluefruit_GetButtonLeft()		{return ButtonStates.ButtonLeft;}
+//bool Bluefruit_GetButtonRight()		{return ButtonStates.ButtonRight;}
 
-Adafruit_BluefruitLE_UART ble(BLUEFRUIT_HWSERIAL_NAME, BLUEFRUIT_UART_MODE_PIN);
-// ----------------------------------------------------------------------------------------------
-// HARDWARE UART SETTINGS
-// ----------------------------------------------------------------------------------------------
-#define BLUEFRUIT_HWSERIAL_NAME      Serial1
-#define BLUEFRUIT_UART_MODE_PIN        6    // Set to -1 if unused
-#define BLUEFRUIT_UART_CTS_PIN         11   // Required for software serial!
-#define BLUEFRUIT_UART_RTS_PIN         -1   // Optional, set to -1 if unused
-
-
-void Bluefruit_Restart(void)
-{
-	ble.begin(0, 0);
-}
-
-/**************************************************************************/
-/*!
-    @brief  Sets up the HW an the BLE module (this function is called
-            automatically on startup)
-*/
-/**************************************************************************/
-void Bluefruit_Init(void)
-{
-  /* Initialise the module */
-  Serial.print(F("Initialising the Bluefruit LE module: "));
-
-  if ( !ble.begin(VERBOSE_MODE, 0) )
-  {
-    //error(F("Couldn't find Bluefruit, make sure it's in CoMmanD mode & check wiring?"));
-	  Serial.println(F("Couldn't find Bluefruit, make sure it's in CoMmanD mode & check wiring?"));
-  }
-  else
-  {
-	  Serial.println( F("OK!") );
-
-	  if ( FACTORYRESET_ENABLE )
-	  {
-		/* Perform a factory reset to make sure everything is in a known state */
-		Serial.println(F("Performing a factory reset: "));
-		if ( ! ble.factoryReset() ){
-		  error(F("Couldn't factory reset"));
-		}
-	  }
-
-	  /* Disable command echo from Bluefruit */
-	  ble.echo(false);
-
-	  Serial.println("Requesting Bluefruit info:");
-	  /* Print Bluefruit information */
-	  ble.info();
-
-	  Serial.println(F("Please use Adafruit Bluefruit LE app to connect in Controller mode"));
-	  Serial.println();
-
-	  //ble.verbose(false);  // debug info is a little annoying after this point!
-
-	  Serial.println(F("***********************"));
-
-	  // Set Bluefruit to DATA mode
-	  Serial.println( F("Switching to DATA mode!") );
-	  ble.setMode(BLUEFRUIT_MODE_DATA);
-
-	  Serial.println(F("***********************"));
-  }
-}
-
-
+//// ----------------------------------------------------------------------------------------------
+//// COMMON SETTINGS
+//// ----------------------------------------------------------------------------------------------
+////#define BUFSIZE                        256   // Size of the read buffer for incoming data
+//#define FACTORYRESET_ENABLE				0
+//#define VERBOSE_MODE                   true  // If set to 'true' enables debug output
+//
+//Adafruit_BluefruitLE_UART ble(BLUEFRUIT_HWSERIAL_NAME, BLUEFRUIT_UART_MODE_PIN);
+//// ----------------------------------------------------------------------------------------------
+//// HARDWARE UART SETTINGS
+//// ----------------------------------------------------------------------------------------------
+//#define BLUEFRUIT_HWSERIAL_NAME      Serial1
+//#define BLUEFRUIT_UART_MODE_PIN        6    // Set to -1 if unused
+//#define BLUEFRUIT_UART_CTS_PIN         11   // Required for software serial!
+//#define BLUEFRUIT_UART_RTS_PIN         -1   // Optional, set to -1 if unused
+//
+//
+//void Bluefruit_Restart(void)
+//{
+//	ble.begin(0, 0);
+//}
+//
+///**************************************************************************/
+///*!
+//    @brief  Sets up the HW an the BLE module (this function is called
+//            automatically on startup)
+//*/
+///**************************************************************************/
+//void Bluefruit_Init(void)
+//{
+//  /* Initialise the module */
+//  Serial.print(F("Initialising the Bluefruit LE module: "));
+//
+//  if ( !ble.begin(VERBOSE_MODE, 0) )
+//  {
+//    //error(F("Couldn't find Bluefruit, make sure it's in CoMmanD mode & check wiring?"));
+//	  Serial.println(F("Couldn't find Bluefruit, make sure it's in CoMmanD mode & check wiring?"));
+//  }
+//  else
+//  {
+//	  Serial.println( F("OK!") );
+//
+//	  if ( FACTORYRESET_ENABLE )
+//	  {
+//		/* Perform a factory reset to make sure everything is in a known state */
+//		Serial.println(F("Performing a factory reset: "));
+//		if ( ! ble.factoryReset() ){
+//		  error(F("Couldn't factory reset"));
+//		}
+//	  }
+//
+//	  /* Disable command echo from Bluefruit */
+//	  ble.echo(false);
+//
+//	  Serial.println("Requesting Bluefruit info:");
+//	  /* Print Bluefruit information */
+//	  ble.info();
+//
+//	  Serial.println(F("Please use Adafruit Bluefruit LE app to connect in Controller mode"));
+//	  Serial.println();
+//
+//	  //ble.verbose(false);  // debug info is a little annoying after this point!
+//
+//	  Serial.println(F("***********************"));
+//
+//	  // Set Bluefruit to DATA mode
+//	  Serial.println( F("Switching to DATA mode!") );
+//	  ble.setMode(BLUEFRUIT_MODE_DATA);
+//
+//	  Serial.println(F("***********************"));
+//  }
+//}
+//
+//

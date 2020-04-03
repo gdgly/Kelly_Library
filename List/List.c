@@ -62,6 +62,16 @@ static LIST_STATUS_T Scan(LIST_HANDLE_T list, LIST_NODE_HANDLE_T newNode)
  * Public functions
  */
 /******************************************************************************/
+
+/******************************************************************************/
+/*!
+ * @brief
+ *
+ * @param[in] disableIRQ
+ * @param[in] enableIRQ
+ * @return void
+ */
+/******************************************************************************/
 void List_InitModule(void (*disableIRQ)(void), void (*enableIRQ)(void))
 {
 	DisableIRQ = disableIRQ;
@@ -72,7 +82,7 @@ void List_InitModule(void (*disableIRQ)(void), void (*enableIRQ)(void))
 /*!
  * @brief  Initializes the list descriptor.
  *
- * @param[in] list - List_T * to init.
+ * @param[in] list - LIST_T * to init.
  * @param[in] max - Maximum number of nodes in list. 0 for unlimited.
  * @return void
  */
