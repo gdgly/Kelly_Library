@@ -1,15 +1,25 @@
+//Handles communication with the Adafruit Bluefruit Android/iOS App
+
+#include "Bluefruit.h"
+
+#include <stdint.h>
 #include <stdbool.h>
 
-//Handles communication with the Adafruit Bluefruit Android/iOS App
-extern uint16_t Bluefruit_GetCharsInRxBuffer();
-extern uint8_t Bluefruit_RecvChar(char *);
-
 #define RX_BUFFER_SIZE                    (20)
-uint8_t PacketBuffer[READ_BUFSIZE+1];
+#define TX_BUFFER_SIZE                    (1)
 
-// ----------------------------------------------------------------------------------------------
-// App Data
-// ----------------------------------------------------------------------------------------------
+static uint8_t * TxPacketBuffer;
+static uint8_t * RxPacketBuffer;
+
+static void (*RecvChar) (uint8_t * c);
+static void (*SendChar) (uint8_t val);
+static uint16_t (*GetCharsInRxBuffer) (void);
+
+/******************************************************************************/
+/*!
+ * App Data
+ */
+/******************************************************************************/
 bool UpdateFlag = 0; // Shared Update Flag, new data available
 bool ColorUpdateFlag = 0;
 bool ButtonUpdateFlag = 0;
@@ -18,39 +28,20 @@ uint8_t ColorR;
 uint8_t ColorG;
 uint8_t ColorB;
 
-//typedef struct
-//{
-//	uint8_t R;
-//	uint8_t G;
-//	uint8_t B;
-//} BLUEFRUIT_COLOR_T;
-
-typedef struct
-{
-	uint8_t Button1		: 1;
-	uint8_t Button2		: 1;
-	uint8_t Button3		: 1;
-	uint8_t Button4		: 1;
-	uint8_t ButtonUp 	: 1;
-	uint8_t ButtonDown 	: 1;
-	uint8_t ButtonLeft	: 1;
-	uint8_t ButtonRight	: 1;
-} BUTTON_PAD_T;
-
 BUTTON_PAD_T ButtonStates;
 //BUTTON_PAD_T ButtonChanged;
 
-#define PACKET_ACC_LEN                  (15)
-#define PACKET_GYRO_LEN                 (15)
-#define PACKET_MAG_LEN                  (15)
-#define PACKET_QUAT_LEN                 (19)
-#define PACKET_BUTTON_LEN               (5)
-#define PACKET_COLOR_LEN                (6)
-#define PACKET_LOCATION_LEN             (15)
-#define BUILD_PACKET_TIME_OUT			500   // Timeout in ms waiting to read a response
-
-uint8_t Bluefruit_RxPacket(void)
+uint8_t BuildRxPacket(void)
 {
+	#define PACKET_ACC_LEN                  (15)
+	#define PACKET_GYRO_LEN                 (15)
+	#define PACKET_MAG_LEN                  (15)
+	#define PACKET_QUAT_LEN                 (19)
+	#define PACKET_BUTTON_LEN               (5)
+	#define PACKET_COLOR_LEN                (6)
+	#define PACKET_LOCATION_LEN             (15)
+	#define BUILD_PACKET_TIME_OUT			500   // Timeout in ms waiting to read a response
+
 	static uint16_t packetIndex = 0;
 	static uint32_t startTime;
 	//static bool packetComplete;
@@ -58,30 +49,44 @@ uint8_t Bluefruit_RxPacket(void)
     // Check for completion
     if
 	(
-		(PacketBuffer[1] == 'B') && (replyidx == PACKET_BUTTON_LEN) ||
-    	(PacketBuffer[1] == 'C') && (replyidx == PACKET_COLOR_LEN)
+		(RxPacketBuffer[1] == 'B') && (packetIndex == PACKET_BUTTON_LEN) ||
+    	(RxPacketBuffer[1] == 'C') && (packetIndex == PACKET_COLOR_LEN)
 	)
     {
     	packetIndex = 0;
+    	//  // check checksum!
+    	//  uint8_t xsum = 0;
+    	//  uint8_t checksum = packetbuffer[replyidx-1];
+    	//
+    	//  for (uint8_t i=0; i<replyidx-1; i++) {
+    	//    xsum += packetbuffer[i];
+    	//  }
+    	//  xsum = ~xsum;
+    	//
+    	//  // Throw an error message if the checksum's don't match
+    	//  if (xsum != checksum)
+    	//  {
+    	//    return 0;
+    	//  }
     	return 1;
     }
 
     // Check for timeout
     if (Millis() - startTime < BUILD_PACKET_TIME_OUT)
     {
-    	if  (Bluefruit_GetCharsInRxBuffer())
+    	if  (GetCharsInRxBuffer())
     	{
 			startTime = Millis();
 
-			while (Bluefruit_GetCharsInRxBuffer())
+			while (GetCharsInRxBuffer())
 			{
 				if (packetIndex < RX_BUFFER_SIZE)
 				{
-					Bluefruit_RecvChar(&Packet[packetIndex]);
-					if (Packet[packetIndex] == '!')
+					RecvChar(&RxPacketBuffer[packetIndex]);
+					if (RxPacketBuffer[packetIndex] == '!')
 					{
 						packetIndex = 0;
-						Packet[packetIndex] = '!';
+						RxPacketBuffer[packetIndex] = '!';
 					}
 					packetIndex++;
 				}
@@ -99,96 +104,32 @@ uint8_t Bluefruit_RxPacket(void)
 	}
 
 	return 0;
-
-//  // check checksum!
-//  uint8_t xsum = 0;
-//  uint8_t checksum = packetbuffer[replyidx-1];
-//
-//  for (uint8_t i=0; i<replyidx-1; i++) {
-//    xsum += packetbuffer[i];
-//  }
-//  xsum = ~xsum;
-//
-//  // Throw an error message if the checksum's don't match
-//  if (xsum != checksum)
-//  {
-//    return 0;
-//  }
 }
 
 
-void Bluefruit_ParsePacket()
+void ParseRxPacket()
 {
-	switch (PacketBuffer[1])
+	switch (RxPacketBuffer[1])
 	{
 		case 'C':
 			//ColorUpdateFlag = 1;
-			ColorR = packetbuffer[2];
-			ColorG = packetbuffer[3];
-			ColorB = packetbuffer[4];
+			ColorR = RxPacketBuffer[2];
+			ColorG = RxPacketBuffer[3];
+			ColorB = RxPacketBuffer[4];
 			break;
 
 		case 'B':
 			//ButtonUpdateFlag = 1;
-			if (packetbuffer[3] - '0')
-				ButtonStates |= 1 << ((packetbuffer[2] - '0') - 1);
+			//    uint8_t buttnum = packetbuffer[2] - '0';
+			//    boolean pressed = packetbuffer[3] - '0';
+			if (RxPacketBuffer[3] - '0') // is pressed
+				ButtonStates.Buttons |= 1 << ((RxPacketBuffer[2] - '0') - 1); // button num
 			else
-				ButtonStates &= ~(1 << ((packetbuffer[2] - '0') - 1));
+				ButtonStates.Buttons &= ~(1 << ((RxPacketBuffer[2] - '0') - 1));
 			break;
 	}
 
-	PacketBuffer[1] = 0; //clear buffer
-
-
-  //  // Color
-//  if (packetbuffer[1] == 'C')
-//  {
-//	ColorUpdateFlag = 1;
-//	ColorR = packetbuffer[2];
-//	ColorG = packetbuffer[3];
-//	ColorB = packetbuffer[4];
-//  }
-
-//  // Buttons
-//  if (packetbuffer[1] == 'B')
-//  {
-//	  if (packetbuffer[3] - '0')
-//		  ButtonStates |= 1 << ((packetbuffer[2] - '0') - 1);
-//	  else
-//		  ButtonStates &= ~(1 << ((packetbuffer[2] - '0') - 1));
-
-//    uint8_t buttnum = packetbuffer[2] - '0';
-//    boolean pressed = packetbuffer[3] - '0';
-//    switch (buttnum)
-//    {
-//    	case 1:
-//    		Bluefruit_Button1 = pressed;
-//    		break;
-//    	case 2:
-//    		Bluefruit_Button2 = pressed;
-//    		break;
-//    	case 3:
-//    		Bluefruit_Button3 = pressed;
-//    		break;
-//    	case 4:
-//    		Bluefruit_Button4 = pressed;
-//    		break;
-//    	case 5:
-//    		Bluefruit_ButtonUp = pressed;
-//    		break;
-//    	case 6:
-//    		Bluefruit_ButtonDown = pressed;
-//    		break;
-//    	case 7:
-//    		Bluefruit_ButtonLeft = pressed;
-//    		break;
-//    	case 8:
-//    		Bluefruit_ButtonRight = pressed;
-//    		break;
-//    	default:
-//    		break;
-//    }
-//  }
+	RxPacketBuffer[1] = 0; //clear buffer
 
 //  // GPS Location
 //  if (packetbuffer[1] == 'L') {
@@ -242,22 +183,16 @@ void Bluefruit_ParsePacket()
 /**************************************************************************/
 bool Bluefruit_Poll(void)
 {
-	if (Bluefruit_BuildPacket())
+	if (BuildRxPacket())
 	{
 		UpdateFlag = true;
-		Bluefruit_ParsePacket();
+		ParseRxPacket();
 		return true;
 	}
 	return false;
 }
 
-char Bluefruit_GetPacketType() 	{return Packet[1];}
 
-bool Bluefruit_GetUpdateFlag()		{return UpdateFlag;}
-void Bluefruit_ResetUpdateFlag()	{UpdateFlag = 0;}
-
-//bool Bluefruit_GetColorUpdateFlag()		{return ColorUpdateFlag;}
-//void Bluefruit_ResetColorUpdateFlag()		{ColorUpdateFlag = 0;}
 
 uint8_t Bluefruit_GetColorR() 		{return ColorR;}
 uint8_t Bluefruit_GetColorG() 		{return ColorG;}
@@ -265,6 +200,14 @@ uint8_t Bluefruit_GetColorB() 		{return ColorB;}
 
 BUTTON_PAD_T Bluefruit_GetButtons()		{return ButtonStates;}
 BUTTON_PAD_T Bluefruit_ReadButtons()	{UpdateFlag = 0; return ButtonStates;}
+
+//char Bluefruit_GetPacketType() 	{return Packet[1];}
+
+bool Bluefruit_GetUpdateFlag()		{return UpdateFlag;}
+void Bluefruit_ResetUpdateFlag()	{UpdateFlag = 0;}
+
+//bool Bluefruit_GetColorUpdateFlag()		{return ColorUpdateFlag;}
+//void Bluefruit_ResetColorUpdateFlag()		{ColorUpdateFlag = 0;}
 
 //bool Bluefruit_ReadButton1()		{UpdateFlag = 0; return ButtonStates.Button1;}
 //bool Bluefruit_ReadButton2()		{UpdateFlag = 0; return ButtonStates.Button2;}

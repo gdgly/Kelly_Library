@@ -7,6 +7,21 @@ void Speed_InitDelta(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t tim
 	speed->TimerFreq = timerFreqHz;
 }
 
+// Call each hall cycle / electric rotation, e.g. hall rising edge interrupt
+// Interval cannot be greater than TimerCounterMax [ticks] i.e. TimerFreq * TimerCounterMax [seconds]
+inline void Speed_CaptureDeltaISR(SPEED_T * speed)
+{
+	if (*speed->TimerCounterValue < speed->TimerCounterValueSaved) // TimerCounter overflow
+		speed->DeltaPeriod = speed->TimerCounterMax - speed->TimerCounterValueSaved + *speed->TimerCounterValue;
+	else
+		speed->DeltaPeriod = *speed->TimerCounterValue - speed->TimerCounterValueSaved;
+
+	speed->TimerCounterValueSaved = *speed->TimerCounterValue;
+
+	speed->DeltaCount++;
+}
+
+
 void Speed_CaptureDeltaPoll(SPEED_T * speed, bool reference) //e.g. give 1 hall edge for reference
 {
 	//if (reference - speed->ReferenceSignalSaved) // rising edge detect

@@ -10,28 +10,24 @@
 
 #include <stdint.h>
 
-#ifndef ADC_DATA_T_16
-typedef uint8_t ADC_DATA_T;
-#else
-typedef uint16_t ADC_DATA_T;
-#endif
 
 typedef struct
 {
 	//Back emf is monitored at a particular time
-//	ADC_DATA_T * BackEMFPhaseA_ADCU;
-//	ADC_DATA_T * BackEMFPhaseB_ADCU;
-//	ADC_DATA_T * BackEMFPhaseC_ADCU;
-	ADC_DATA_T * I_ADCU;
+	uint8_t * BackEMFPhaseA_ADCU;
+	uint8_t * BackEMFPhaseB_ADCU;
+	uint8_t * BackEMFPhaseC_ADCU;
+	uint8_t * I_ADCU;
+	uint8_t * VBat_ADCU;
+	uint8_t * LSTemp_ADCU;
 
-	ADC_DATA_T * VBat_ADCU;
-	ADC_DATA_T * LSTemp_ADCU;
 
-	ADC_DATA_T IZero_ADCU; // == 125
-	ADC_DATA_T IMax_ADCU; // == 125
 
-	ADC_DATA_T OverVoltage_ADCU;
-	ADC_DATA_T UnderVoltage_ADCU;
+	uint8_t IZero_ADCU; // == 125
+	uint8_t IMax_ADCU; // == 125
+
+	uint8_t OverVoltage_ADCU;
+	uint8_t UnderVoltage_ADCU;
 
 }
 MONITOR_T;

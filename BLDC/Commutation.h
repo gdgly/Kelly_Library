@@ -91,12 +91,8 @@ typedef struct
 }
 BLDC_COMMUTATION_T;
 
-inline void BLDC_Commutation_ISR(BLDC_COMMUTATION_T * commutation, uint8_t pwm)
-{
-	//	if (commutation->Direction == DIRECTION_CCW)
-	//		~(commutation->GetHallSensors())&0x07
-	commutation->CommuntationTable[commutation->GetHallState()].ActivatePhase(pwm);
-}
+
+extern void BLDC_Commutation_ISR(BLDC_COMMUTATION_T * commutation, uint8_t pwm);
 
 bool BLDC_Commutation_Poll(BLDC_COMMUTATION_T * commutation, uint8_t pwm);
 void (*BLDC_Commutation_GetFunctionActivatePhase(BLDC_COMMUTATION_T * commutation))(uint8_t);

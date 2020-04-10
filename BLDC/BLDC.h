@@ -37,7 +37,7 @@ typedef struct
 	uint32_t PIDSetPointHallPeriod;
 
 	uint16_t PWM;
-	uint32_t SetPointRPM;
+	uint32_t TargetRPM;
 
 	uint32_t JogSteps;
 	uint32_t StepCount; //void BLDC_ResetStepCount(void);

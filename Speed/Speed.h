@@ -31,19 +31,8 @@ typedef struct
 }
 SPEED_T;
 
-// Call each hall cycle / electric rotation, e.g. hall rising edge interrupt
-// Interval cannot be greater than TimerCounterMax [ticks] i.e. TimerFreq * TimerCounterMax [seconds]
-inline void Speed_CaptureDeltaISR(SPEED_T * speed)
-{
-	if (*speed->TimerCounterValue < speed->TimerCounterValueSaved) // TimerCounter overflow
-		speed->DeltaPeriod = speed->TimerCounterMax - speed->TimerCounterValueSaved + *speed->TimerCounterValue;
-	else
-		speed->DeltaPeriod = *speed->TimerCounterValue - speed->TimerCounterValueSaved;
 
-	speed->TimerCounterValueSaved = *speed->TimerCounterValue;
-
-	speed->DeltaCount++;
-}
+extern void Speed_CaptureDeltaISR(SPEED_T * speed);
 
 void Speed_CaptureDeltaPoll(SPEED_T * speed, bool reference);
 uint32_t * Speed_GetPtrDeltaPeriod(SPEED_T * speed);

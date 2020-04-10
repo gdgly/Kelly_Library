@@ -20,6 +20,17 @@ typedef enum
 	RESERVED_SHELL_RETURN_CODE_PROCESSING = -2,
 } RESERVED_SHELL_RETURN_CODE_T;
 
+typedef struct
+{
+	int ReturnCode;
+    char * ReturnCodeString;
+    //errorhandlingfunction?
+#ifdef SHELL_OPTION_USE_LIST
+    LIST_NODE_T Link;
+#endif
+}
+RETURN_CODE_ENTRY_T, *RETURN_CODE_ENTRY_HANDLE_T;
+
 typedef enum
 {
 	CMDLINE_OK,
@@ -43,16 +54,6 @@ typedef struct
 }
 CMDLINE_ENTRY_T, *CMDLINE_ENTRY_HANDLE_T;
 
-typedef struct
-{
-	int ReturnCode;
-    char * ReturnCodeString;
-    //errorhandlingfunction?
-#ifdef SHELL_OPTION_USE_LIST
-    LIST_NODE_T Link;
-#endif
-}
-RETURN_CODE_ENTRY_T, *RETURN_CODE_ENTRY_HANDLE_T;
 
 #ifdef SHELL_OPTION_USE_ARRAY_TABLE
 #define CMD_ENTRY(CmdName, CmdHelpString, CmdFunction) { (#CmdName), (CmdHelpString), (CmdFunction) }

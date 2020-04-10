@@ -7,6 +7,14 @@
 
 #include "Commutation.h"
 
+inline void BLDC_Commutation_ISR(BLDC_COMMUTATION_T * commutation, uint8_t pwm)
+{
+	//	if (commutation->Direction == DIRECTION_CCW)
+	//		~(commutation->GetHallSensors())&0x07
+	commutation->CommuntationTable[commutation->GetHallState()].ActivatePhase(pwm);
+}
+
+
 bool BLDC_Commutation_Poll(BLDC_COMMUTATION_T * commutation, uint8_t pwm)
 {
 	if (commutation->SavedHallState != commutation->GetHallState())
