@@ -284,7 +284,7 @@ void Measure_Disable(void)
 //	ADC_OnEndISR = fp;
 //}
 
-// not really needed since, buffer is provided by user
+// not really needed, since buffer is provided by user
 bool Measure_SaveValue(volatile ADC_DATA_T * value, uint8_t channel)
 {
 	if (channel >= ADC_ChannelCount)	return false;
@@ -302,7 +302,13 @@ bool Measure_MapAddress(volatile ADC_DATA_T ** address, uint8_t channel)
 volatile ADC_DATA_T Measure_GetValue(uint8_t channel)
 {
 	if (channel < ADC_ChannelCount)	return MeasureChannelResultBuffer[channel];
-	else 								return 0;
+	else 							return 0;
+}
+
+volatile ADC_DATA_T Measure_GetChannelResult(uint8_t channel)
+{
+	if (channel < ADC_ChannelCount)	return MeasureChannelResultBuffer[channel];
+	else 							return 0;
 }
 
 volatile ADC_DATA_T * Measure_GetAddress(uint8_t channel)

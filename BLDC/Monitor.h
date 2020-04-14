@@ -18,10 +18,9 @@ typedef struct
 	uint8_t * BackEMFPhaseB_ADCU;
 	uint8_t * BackEMFPhaseC_ADCU;
 	uint8_t * I_ADCU;
+
 	uint8_t * VBat_ADCU;
 	uint8_t * LSTemp_ADCU;
-
-
 
 	uint8_t IZero_ADCU; // == 125
 	uint8_t IMax_ADCU; // == 125

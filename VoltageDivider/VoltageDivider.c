@@ -71,7 +71,7 @@ void VoltageDivider_Init(VOLTAGE_DIVIDER_T * div, uint32_t r1Ratio, uint32_t r2R
 
 uint16_t VoltageDivider_GetVoltage(VOLTAGE_DIVIDER_T * div, uint16_t adcRaw)
 {
-	return (adcRaw*div->VPerADCTop)/div->VPerADCBottom; // (adcRaw*VREF*(R1_RATIO+R2_RATIO))/(R2_RATIO*ADC_RES);
+	return (adcRaw*div->VPerADCTop + (div->VPerADCBottom/2) )/div->VPerADCBottom; // (adcRaw*VREF*(R1_RATIO+R2_RATIO))/(R2_RATIO*ADC_RES); // add (div->VPerADCBottom/2) to round up .5
 }
 
 /******************************************************************************/
@@ -100,6 +100,16 @@ uint16_t VoltageDivider_GetVoltage10(VOLTAGE_DIVIDER_T * div, uint16_t adcRaw, u
 /******************************************************************************/
 uint16_t VoltageDivider_GetADCRaw(VOLTAGE_DIVIDER_T * div, uint16_t voltage)
 {
-	return (voltage*div->VPerADCBottom)/div->VPerADCTop;
+	return (voltage*div->VPerADCBottom + (div->VPerADCTop/2) )/div->VPerADCTop;
+}
+
+
+
+void VoltageDivider_InitPercentage(VOLTAGE_DIVIDER_T * div, uint32_t r1Ratio, uint32_t r2Ratio, uint8_t vRef, uint16_t adcMax, uint16_t v100Percent, uint16_t v0Percent)
+{
+//	div->V100Percent;
+//	div->V0Percent;
+//	div->VPercentPerADCU;
+//	div->V0PercentADCU;
 }
 

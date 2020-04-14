@@ -12,6 +12,7 @@
 #include "Speed.h"
 #include "Commutation.h"
 #include "PID.h"
+#include "VoltageDivider.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -27,23 +28,43 @@ typedef enum
 typedef struct 
 {
 	MOTOR_STATE_T State;
-	BLDC_COMMUTATION_T Commutation;
-	SPEED_T Speed;
-	PID_T PID;
+	BLDC_COMMUTATION_T * Commutation;
+	SPEED_T * Speed;
+	PID_T * PID;
+	VOLTAGE_DIVIDER_T * VDivBackEMFPhaseA;
+	VOLTAGE_DIVIDER_T * VDivBackEMFPhaseB;
+	VOLTAGE_DIVIDER_T * VDivBackEMFPhaseC;
+	VOLTAGE_DIVIDER_T * VDivBat;
+	VOLTAGE_DIVIDER_T * VDivTemperature;
 	//BLDC_ERROR_T Error;
 
-	//speed->EventPeriod
-	uint32_t PIDOutputHallPeriod;
-	uint32_t PIDSetPointHallPeriod;
+	void(*DisablePWM)(void);
 
 	uint16_t PWM;
-	uint32_t TargetRPM;
+	uint16_t PWMMax;
 
+//  speed->EventPeriod
+//	uint32_t PIDOutputHallPeriod;
+//	uint32_t PIDSetPointHallPeriod;
 	uint32_t JogSteps;
-	uint32_t StepCount; //void BLDC_ResetStepCount(void);
+	uint32_t StepCount;
 
+	uint32_t SetRPM;
+	uint32_t RPMMax; //set proportional to max voltage?
+
+	uint16_t SetVoltage; //desired speed
+
+	//uint16_t OptimalRegen;
+
+	//Monitor
 
 	uint8_t IZero_ADCU; // == 125
+	uint8_t IMax_ADCU;
+
+	uint8_t OverVoltage_ADCU;
+	uint8_t UnderVoltage_ADCU;
+
+	uint8_t * BackEMFSelect_ADCU;
 
 	uint8_t * BackEMFPhaseA_ADCU;
 	uint8_t * BackEMFPhaseB_ADCU;

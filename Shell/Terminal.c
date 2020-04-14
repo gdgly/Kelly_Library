@@ -6,4 +6,5 @@
  */
 
 
-///support send functions not provided by PE
+// wrapper of sned chars used for terminal purposes.
+// support send functions not provided by PE

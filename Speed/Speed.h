@@ -37,7 +37,7 @@ SPEED_T;
 extern void Speed_CaptureDeltaISR(SPEED_T * speed);
 
 void Speed_CaptureDeltaPoll(SPEED_T * speed, bool reference);
-uint32_t * Speed_GetPtrDelta(SPEED_T * speed);
+volatile uint32_t * Speed_GetPtrDelta(SPEED_T * speed);
 uint32_t Speed_GetDeltaRaw(SPEED_T * speed);
 uint32_t Speed_GetDeltaMillis(SPEED_T * speed);
 uint32_t Speed_GetDeltaMicros(SPEED_T * speed);
@@ -51,7 +51,7 @@ void Speed_Init(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t timerCou
  * @brief 		BLDC functions declarations
  */
 /*! @{ */
-void Speed_InitHallEncoder(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t timerCounterMax, uint32_t timerFreqHz, uint8_t polePairs,	uint32_t pwmFreq);
+void Speed_InitHallEncoder(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t timerCounterMax, uint32_t timerFreqHz, uint8_t polePairs, uint32_t pwmFreq);
 uint32_t Speed_GetRPM(SPEED_T * speed);
 uint32_t Speed_GetERPM(SPEED_T * speed);
 uint32_t Speed_GetPWMPeriodCount(SPEED_T * speed);

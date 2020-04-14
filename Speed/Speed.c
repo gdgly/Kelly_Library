@@ -51,7 +51,15 @@ void Speed_CaptureDeltaPoll(SPEED_T * speed, bool reference)
 	speed->ReferenceSignalSaved = reference;
 }
 
-uint32_t * Speed_GetPtrDelta(SPEED_T * speed)
+//void Speed_LongDeltaPoll(SPEED_T * speed)
+//{
+//	if (speed->Delta == speed->DeltaSaved)
+//	{
+//		//return delta stoped, return 0 speed
+//	}
+//}
+
+volatile uint32_t * Speed_GetPtrDelta(SPEED_T * speed)
 {
 	return &speed->Delta;
 }
@@ -78,6 +86,12 @@ uint32_t Speed_GetDeltaFreq(SPEED_T * speed) // unit in Hz
 {
 	if (speed->Delta == 0)	return 0;
 	else					return speed->TimerFreq / speed->Delta;
+}
+
+uint32_t Speed_GetDeltaFreqCPM(SPEED_T * speed) // unit in cycles per minute
+{
+	if (speed->Delta == 0)	return 0;
+	else					return speed->TimerFreq * 60 / speed->Delta;
 }
 
 //uint32_t Speed_ResetTimer(SPEED_T * speed)
@@ -279,13 +293,13 @@ uint32_t Speed_GetRotationDegrees10(SPEED_T * speed)
 uint32_t Speed_ConvertRPMToDelta(SPEED_T * speed, uint32_t rpm) // HallPeriod unit in timer ticks
 {
 	if (rpm == 0)	return 0;
-	return speed->RevolutionsTimerFreq / rpm; //timerFreqHz * 60 / nPolePairs / rpm;
+	return speed->RevolutionsTimerFreq *60 / rpm; //timerFreqHz * 60 / nPolePairs / rpm;
 }
 
 uint32_t Speed_ConvertDeltaToRPM(SPEED_T * speed, uint32_t peroid) // HallPeriod unit in timer ticks
 {
 	if (peroid == 0)	return 0;
-	return speed->RevolutionsTimerFreq / peroid;
+	return speed->RevolutionsTimerFreq *60 / peroid;
 }
 
 /*! @} */
@@ -348,6 +362,11 @@ int32_t Speed_GetRotaryVelocity(SPEED_T * speed)
 /******************************************************************************/
 /*! @{ */
 
+//void Speed_InitHallEncoder(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t timerCounterMax, uint32_t timerFreqHz, uint8_t nPolePairs, uint16_t distancePerRevolution, uint32_t pwmFreqHz)
+//{
+//
+//}
+
 /*!
  * Delta[s] 	= Delta[TimerTicks]/TimerFreq[Hz]
  * ERPM			= 1[Delta]*60[s]/Delta[s]
@@ -364,18 +383,17 @@ void Speed_InitHallEncoder(SPEED_T * speed, uint32_t * timerCounterValue, uint32
 
 uint32_t Speed_GetRPS(SPEED_T * speed)
 {
-	return Speed_GetRotarySpeed(speed); // timerFreqHz * 60 / nPolePairs / speed->Delta;
+	return Speed_GetRotarySpeed(speed); // timerFreqHz / nPolePairs / speed->Delta;
 }
 
 uint32_t Speed_GetRPM(SPEED_T * speed)
 {
-	return Speed_GetRotarySpeedRPM(speed);
+	return Speed_GetRotarySpeedRPM(speed); // timerFreqHz * 60 / nPolePairs / speed->Delta;
 }
 
 uint32_t Speed_GetERPM(SPEED_T * speed)
 {
-	if (speed->Delta == 0) return 0;
-	return speed->TimerFreq * 60 / speed->Delta;
+	return Speed_GetDeltaFreqCPM(speed); //speed->TimerFreq * 60 / speed->Delta;
 }
 
 uint32_t Speed_GetHallPeroid(SPEED_T * speed)
@@ -407,3 +425,10 @@ uint32_t Speed_ConvertHallPeroidToRPM(SPEED_T * speed, uint32_t ticks) // HallPe
 }
 
 /*! @} */
+
+
+uint32_t Speed_GetRoadSpeed(SPEED_T * speed, uint32_t wheelRatio, uint32_t motorRatio)
+{
+
+}
+

@@ -7,7 +7,7 @@
 
 #include "Commutation.h"
 
-inline void BLDC_Commutation_ISR(BLDC_COMMUTATION_T * commutation, uint8_t pwm)
+inline void BLDC_Commutation_ISR(BLDC_COMMUTATION_T * commutation, uint16_t pwm)
 {
 	//	if (commutation->Direction == DIRECTION_CCW)
 	//		~(commutation->GetHallSensors())&0x07
@@ -15,7 +15,7 @@ inline void BLDC_Commutation_ISR(BLDC_COMMUTATION_T * commutation, uint8_t pwm)
 }
 
 
-bool BLDC_Commutation_Poll(BLDC_COMMUTATION_T * commutation, uint8_t pwm)
+bool BLDC_Commutation_Poll(BLDC_COMMUTATION_T * commutation, uint16_t pwm)
 {
 	if (commutation->SavedHallState != commutation->GetHallState())
 	{
@@ -27,15 +27,20 @@ bool BLDC_Commutation_Poll(BLDC_COMMUTATION_T * commutation, uint8_t pwm)
 	return false;
 }
 
-void (*BLDC_Commutation_GetFunctionActivatePhase(BLDC_COMMUTATION_T * commutation))(uint8_t)
+void BLDC_Commutation_SetPhasePWM(BLDC_COMMUTATION_T * commutation, uint16_t pwm)
 {
-	return commutation->CommuntationTable[commutation->GetHallState()].ActivatePhase;
+	commutation->CommuntationTable[commutation->GetHallState()].SetPhasePWM(pwm);
 }
 
-void (*BLDC_Commutation_GetFunctionSetPhasePWM(BLDC_COMMUTATION_T * commutation))(uint8_t)
-{
-	return commutation->CommuntationTable[commutation->GetHallState()].SetPhasePWM;
-}
+//void (*BLDC_Commutation_GetFunctionActivatePhase(BLDC_COMMUTATION_T * commutation))(uint16_t)
+//{
+//	return commutation->CommuntationTable[commutation->GetHallState()].ActivatePhase;
+//}
+//
+//void (*BLDC_Commutation_GetFunctionSetPhasePWM(BLDC_COMMUTATION_T * commutation))(uint16_t)
+//{
+//	return commutation->CommuntationTable[commutation->GetHallState()].SetPhasePWM;
+//}
 
 void BLDC_Commutation_SetDirection(BLDC_COMMUTATION_T * commutation, BLDC_DIRECTION_T dir) 
 {
@@ -69,19 +74,20 @@ void BLDC_Commutation_MapCommuntationTableRunCalibration
 	uint8_t * returnIndexBA,
 	uint8_t * returnIndexCA,
 	uint8_t * returnIndexCB,
-	void (*setPWMPhaseAB)(uint8_t),
-	void (*setPWMPhaseAC)(uint8_t),
-	void (*setPWMPhaseBC)(uint8_t),
-	void (*setPWMPhaseBA)(uint8_t),
-	void (*setPWMPhaseCA)(uint8_t),
-	void (*setPWMPhaseCB)(uint8_t),
+	void (*setPWMPhaseAB)(uint16_t),
+	void (*setPWMPhaseAC)(uint16_t),
+	void (*setPWMPhaseBC)(uint16_t),
+	void (*setPWMPhaseBA)(uint16_t),
+	void (*setPWMPhaseCA)(uint16_t),
+	void (*setPWMPhaseCB)(uint16_t),
 	uint16_t pwm,
-	void (*commutatePhaseAB)(uint8_t),
-	void (*commutatePhaseAC)(uint8_t),
-	void (*commutatePhaseBC)(uint8_t),
-	void (*commutatePhaseBA)(uint8_t),
-	void (*commutatePhaseCA)(uint8_t),
-	void (*commutatePhaseCB)(uint8_t),
+	void (*commutatePhaseAB)(uint16_t),
+	void (*commutatePhaseAC)(uint16_t),
+	void (*commutatePhaseBC)(uint16_t),
+	void (*commutatePhaseBA)(uint16_t),
+	void (*commutatePhaseCA)(uint16_t),
+	void (*commutatePhaseCB)(uint16_t),
+	//pwm
 	void (*enablePhaseABC)(void),
 	void (*delay)(uint32_t),
 	uint32_t delayTime
@@ -91,8 +97,6 @@ void BLDC_Commutation_MapCommuntationTableRunCalibration
 	//phaseA top on
 	//phaseB bottom on
 	//phaseC bottom on
-//	setPWMPhaseAB(pwm);
-//	setPWMPhaseAC(pwm);
 	commutatePhaseAB(pwm);
 	commutatePhaseAC(pwm);
 	if(enablePhaseABC) enablePhaseABC();
@@ -103,8 +107,6 @@ void BLDC_Commutation_MapCommuntationTableRunCalibration
 	commutation->CommuntationTableCCW[commutation->GetHallState()].ActivatePhase 	= commutatePhaseCB;
 	if (returnIndexBC) *returnIndexBC = commutation->GetHallState();
 	
-//	setPWMPhaseAC(pwm);
-//	setPWMPhaseBC(pwm);
 	commutatePhaseAC(pwm);
 	commutatePhaseBC(pwm);
 	if(enablePhaseABC) enablePhaseABC();
@@ -115,8 +117,6 @@ void BLDC_Commutation_MapCommuntationTableRunCalibration
 	commutation->CommuntationTableCCW[commutation->GetHallState()].ActivatePhase 	= commutatePhaseAB;
 	if (returnIndexBA) *returnIndexBA = commutation->GetHallState();
 	
-//	setPWMPhaseBC(pwm);
-//	setPWMPhaseBA(pwm);
 	commutatePhaseBC(pwm);
 	commutatePhaseBA(pwm);
 	if(enablePhaseABC) enablePhaseABC();
@@ -127,8 +127,6 @@ void BLDC_Commutation_MapCommuntationTableRunCalibration
 	commutation->CommuntationTableCCW[commutation->GetHallState()].ActivatePhase 	= commutatePhaseAC;
 	if (returnIndexCA) *returnIndexCA = commutation->GetHallState();
 	
-//	setPWMPhaseBA(pwm);
-//	setPWMPhaseCA(pwm);
 	commutatePhaseBA(pwm);
 	commutatePhaseCA(pwm);
 	if(enablePhaseABC) enablePhaseABC();
@@ -139,8 +137,6 @@ void BLDC_Commutation_MapCommuntationTableRunCalibration
 	commutation->CommuntationTableCCW[commutation->GetHallState()].ActivatePhase 	= commutatePhaseBC;
 	if (returnIndexCB) *returnIndexCB = commutation->GetHallState();
 	
-//	setPWMPhaseCA(pwm);
-//	setPWMPhaseCB(pwm);
 	commutatePhaseCA(pwm);
 	commutatePhaseCB(pwm);
 	if(enablePhaseABC) enablePhaseABC();
@@ -151,8 +147,6 @@ void BLDC_Commutation_MapCommuntationTableRunCalibration
 	commutation->CommuntationTableCCW[commutation->GetHallState()].ActivatePhase 	= commutatePhaseBA;
 	if (returnIndexAB) *returnIndexAB = commutation->GetHallState();
 	
-//	setPWMPhaseCB(pwm);
-//	setPWMPhaseAB(pwm);
 	commutatePhaseCB(pwm);
 	commutatePhaseAB(pwm);
 	if(enablePhaseABC) enablePhaseABC();
@@ -167,18 +161,18 @@ void BLDC_Commutation_MapCommuntationTableRunCalibration
 void BLDC_Commutation_MapCommuntationTable
 (	
 	BLDC_COMMUTATION_T * commutation,				
-	void (*setPWMPhaseAB)(uint8_t),
-	void (*setPWMPhaseAC)(uint8_t),
-	void (*setPWMPhaseBC)(uint8_t),
-	void (*setPWMPhaseBA)(uint8_t),
-	void (*setPWMPhaseCA)(uint8_t),
-	void (*setPWMPhaseCB)(uint8_t),
-	void (*commutatePhaseAB)(uint8_t),
-	void (*commutatePhaseAC)(uint8_t),
-	void (*commutatePhaseBC)(uint8_t),
-	void (*commutatePhaseBA)(uint8_t),
-	void (*commutatePhaseCA)(uint8_t),
-	void (*commutatePhaseCB)(uint8_t),
+	void (*setPWMPhaseAB)(uint16_t),
+	void (*setPWMPhaseAC)(uint16_t),
+	void (*setPWMPhaseBC)(uint16_t),
+	void (*setPWMPhaseBA)(uint16_t),
+	void (*setPWMPhaseCA)(uint16_t),
+	void (*setPWMPhaseCB)(uint16_t),
+	void (*commutatePhaseAB)(uint16_t),
+	void (*commutatePhaseAC)(uint16_t),
+	void (*commutatePhaseBC)(uint16_t),
+	void (*commutatePhaseBA)(uint16_t),
+	void (*commutatePhaseCA)(uint16_t),
+	void (*commutatePhaseCB)(uint16_t),
 	uint8_t indexPhaseAB,
 	uint8_t indexPhaseAC,
 	uint8_t indexPhaseBC,
@@ -219,18 +213,18 @@ void BLDC_Commutation_MapCommuntationTable
 void BLDC_Commutation_MapCommuntationTableHallDefault
 (	
 	BLDC_COMMUTATION_T * commutation,				
-	void (*setPWMPhaseAB)(uint8_t),
-	void (*setPWMPhaseAC)(uint8_t),
-	void (*setPWMPhaseBC)(uint8_t),
-	void (*setPWMPhaseBA)(uint8_t),
-	void (*setPWMPhaseCA)(uint8_t),
-	void (*setPWMPhaseCB)(uint8_t),
-	void (*commutatePhaseAB)(uint8_t),
-	void (*commutatePhaseAC)(uint8_t),
-	void (*commutatePhaseBC)(uint8_t),
-	void (*commutatePhaseBA)(uint8_t),
-	void (*commutatePhaseCA)(uint8_t),
-	void (*commutatePhaseCB)(uint8_t)
+	void (*setPWMPhaseAB)(uint16_t),
+	void (*setPWMPhaseAC)(uint16_t),
+	void (*setPWMPhaseBC)(uint16_t),
+	void (*setPWMPhaseBA)(uint16_t),
+	void (*setPWMPhaseCA)(uint16_t),
+	void (*setPWMPhaseCB)(uint16_t),
+	void (*commutatePhaseAB)(uint16_t),
+	void (*commutatePhaseAC)(uint16_t),
+	void (*commutatePhaseBC)(uint16_t),
+	void (*commutatePhaseBA)(uint16_t),
+	void (*commutatePhaseCA)(uint16_t),
+	void (*commutatePhaseCB)(uint16_t)
 ) 
 {
 	BLDC_Commutation_MapCommuntationTable
@@ -260,18 +254,18 @@ void BLDC_Commutation_Init
 	BLDC_COMMUTATION_T * commutation,
 	BLDC_DIRECTION_T dir,
 	uint8_t (*getHallSensors)(void),
-	void (*setPWMPhaseAB)(uint8_t),
-	void (*setPWMPhaseAC)(uint8_t),
-	void (*setPWMPhaseBC)(uint8_t),
-	void (*setPWMPhaseBA)(uint8_t),
-	void (*setPWMPhaseCA)(uint8_t),
-	void (*setPWMPhaseCB)(uint8_t),
-	void (*commutatePhaseAB)(uint8_t),
-	void (*commutatePhaseAC)(uint8_t),
-	void (*commutatePhaseBC)(uint8_t),
-	void (*commutatePhaseBA)(uint8_t),
-	void (*commutatePhaseCA)(uint8_t),
-	void (*commutatePhaseCB)(uint8_t),
+	void (*setPWMPhaseAB)(uint16_t),
+	void (*setPWMPhaseAC)(uint16_t),
+	void (*setPWMPhaseBC)(uint16_t),
+	void (*setPWMPhaseBA)(uint16_t),
+	void (*setPWMPhaseCA)(uint16_t),
+	void (*setPWMPhaseCB)(uint16_t),
+	void (*commutatePhaseAB)(uint16_t),
+	void (*commutatePhaseAC)(uint16_t),
+	void (*commutatePhaseBC)(uint16_t),
+	void (*commutatePhaseBA)(uint16_t),
+	void (*commutatePhaseCA)(uint16_t),
+	void (*commutatePhaseCB)(uint16_t),
 	uint8_t indexPhaseAB,
 	uint8_t indexPhaseAC,
 	uint8_t indexPhaseBC,
