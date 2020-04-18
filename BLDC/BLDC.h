@@ -28,7 +28,7 @@ typedef enum
 typedef struct 
 {
 	MOTOR_STATE_T State;
-	BLDC_COMMUTATION_T * Commutation;
+	COMMUTATION_T * Commutation;
 	SPEED_T * Speed;
 	PID_T * PID;
 	VOLTAGE_DIVIDER_T * VDivBackEMFPhaseA;
@@ -38,7 +38,8 @@ typedef struct
 	VOLTAGE_DIVIDER_T * VDivTemperature;
 	//BLDC_ERROR_T Error;
 
-	void(*DisablePWM)(void);
+	void(*ShortMotor)(void);
+	void(*FloatMotor)(void);
 
 	uint16_t PWM;
 	uint16_t PWMMax;
@@ -66,6 +67,8 @@ typedef struct
 
 	uint8_t * BackEMFSelect_ADCU;
 
+	uint8_t BackEMF_ADCU;
+
 	uint8_t * BackEMFPhaseA_ADCU;
 	uint8_t * BackEMFPhaseB_ADCU;
 	uint8_t * BackEMFPhaseC_ADCU;
@@ -76,11 +79,6 @@ typedef struct
 BLDC_CONTROLLER_T;
 
 
-uint8_t * BLDC_GetPtrBackEMFPhaseA(BLDC_CONTROLLER_T * bldc);
-uint8_t * BLDC_GetPtrBackEMFPhaseB(BLDC_CONTROLLER_T * bldc);
-uint8_t * BLDC_GetPtrBackEMFPhaseC(BLDC_CONTROLLER_T * bldc);
-uint8_t * BLDC_GetPtrVBat(BLDC_CONTROLLER_T * bldc);
-uint8_t * BLDC_GetPtrI(BLDC_CONTROLLER_T * bldc);
-uint8_t * BLDC_GetPtrLSTemp(BLDC_CONTROLLER_T * bldc);
+
 
 #endif /* BLDC_H_ */

@@ -16,12 +16,12 @@ typedef struct
 	volatile uint32_t DeltaCount;				/*!< Track number of deltas, used in extensions */
 	//need data to determine timer validity? invalid for first time sample. invalid for time > than 1 timer cycle.
 
-	uint32_t DistancePerDeltaCycle;			/*!< User defined */
+	uint32_t DistancePerSignal;			/*!< User defined */
 	uint32_t DistanceTimerFreq;			/*!< (DistancePerDelta * TimerFreq) */
 
 	uint16_t PulsePerRevolution;		/*!< User defined */
 	uint16_t DistancePerRevolution;		/*!< User defined */
-	//uint32_t DistancePerDelta;		/*!< DistancePerRevolution/PulsePerRevolution, used for Encoder GetDistancePerPulse */
+	//uint32_t DistancePerSignal;		/*!< DistancePerRevolution/PulsePerRevolution, used for Encoder GetDistancePerPulse */
 	//uint32_t DistanceTimerFreq; 		/*!< TimerFreq*DistancePerRevolution/PulsePerRevolution, used for GetLinearSpeed */
 	uint32_t RevolutionsTimerFreq; 		/*!< TimerFreq/PulsePerRevolution, used for GetRotarySpeed */
 
@@ -51,7 +51,7 @@ void Speed_Init(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t timerCou
  * @brief 		BLDC functions declarations
  */
 /*! @{ */
-void Speed_InitHallEncoder(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t timerCounterMax, uint32_t timerFreqHz, uint8_t polePairs, uint32_t pwmFreq);
+void Speed_InitHallEncoder(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t timerCounterMax, uint32_t timerFreqHz, uint8_t nPolePairs, uint16_t distancePerRevolution, uint32_t pwmFreqHz);
 uint32_t Speed_GetRPM(SPEED_T * speed);
 uint32_t Speed_GetERPM(SPEED_T * speed);
 uint32_t Speed_GetPWMPeriodCount(SPEED_T * speed);

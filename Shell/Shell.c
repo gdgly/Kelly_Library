@@ -447,6 +447,8 @@ void Shell_RegisterCmdLineEntry(CMDLINE_ENTRY_T * cmd)
 
 void Shell_Init()
 {
+	Terminal_Init();
+
 #ifdef SHELL_OPTION_USE_LIST
 	Shell_RegisterCmdLineEntry(&CmdEntry_help);
 	Shell_RegisterCmdLineEntry(&CmdEntry_helph);
@@ -461,6 +463,8 @@ void Shell_InitNonBlocking(uint16_t cmdLoopFreq, uint16_t outterLoopFreq)
 {
 	LoopFreqCalibrate = outterLoopFreq;
 	LoopControl = outterLoopFreq/cmdLoopFreq;
+
+	Terminal_Init();
 
 #ifdef SHELL_OPTION_USE_LIST
 	Shell_RegisterCmdLineEntry(&CmdEntry_help);

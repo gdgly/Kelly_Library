@@ -8,6 +8,12 @@
 /******************************************************************************/
 /*! @{ */
 
+/******************************************************************************/
+/*!
+ * @brief	Init with provided parameters
+ *
+ */
+/******************************************************************************/
 void Speed_InitDelta(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t timerCounterMax, uint32_t timerFreqHz)
 {
 	speed->TimerCounterValue = timerCounterValue;
@@ -118,11 +124,11 @@ void Speed_ZeroDeltaCount(SPEED_T * speed)
  */
 /******************************************************************************/
 /*! @{ */
-void Speed_InitSpeed(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t timerCounterMax, uint32_t timerFreqHz, uint32_t distancePerDeltaCycle)
+void Speed_InitSpeed(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t timerCounterMax, uint32_t timerFreqHz, uint32_t distancePerSignal)
 {
 	Speed_InitDelta(speed, timerCounterValue, timerCounterMax, timerFreqHz);
-	speed->DistancePerDeltaCycle = distancePerDeltaCycle;
-	speed->DistanceTimerFreq = distancePerDeltaCycle * timerFreqHz; // possible 32bit overflow, max distancePerDelta ~14,000, for 300,000 Hz timer
+	speed->DistancePerSignal = distancePerSignal;
+	speed->DistanceTimerFreq = distancePerSignal * timerFreqHz; // possible 32bit overflow, max distancePerDelta ~14,000, for 300,000 Hz timer
 }
 
 /*!
@@ -146,7 +152,7 @@ uint32_t Speed_GetSpeed(SPEED_T * speed)
 
 uint32_t Speed_GetDistance(SPEED_T * speed)
 {
-	return speed->DistancePerDeltaCycle * speed->DeltaCount;
+	return speed->DistancePerSignal * speed->DeltaCount;
 }
 
 uint32_t Speed_ConvertSpeedToDelta(SPEED_T * speed, uint32_t distancePerSecond)// Delta is in timer tick units
@@ -176,7 +182,7 @@ void Speed_InitEncoder(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t t
 
 	speed->PulsePerRevolution = pulsePerRevolution;
 	speed->DistancePerRevolution = distancePerRevolution;
-	speed->DistancePerDeltaCycle = distancePerRevolution/pulsePerRevolution; // only used for GetDistancePerPulse, use components for precisions in other cases
+	speed->DistancePerSignal = distancePerRevolution/pulsePerRevolution; // only used for GetDistancePerPulse, use components for precisions in other cases
 
 	if (distancePerRevolution > 0xFFFFFFFF / speed->TimerFreq) // if speed->TimerFreq * distancePerRevolution overflow
 		speed->DistanceTimerFreq = distancePerRevolution * (speed->TimerFreq / pulsePerRevolution);
@@ -188,7 +194,7 @@ void Speed_InitEncoder(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t t
 
 uint32_t Speed_GetDistancePerPulse(SPEED_T * speed)
 {
-	return speed->DistancePerDeltaCycle;
+	return speed->DistancePerSignal;
 }
 
 /*!
@@ -290,16 +296,16 @@ uint32_t Speed_GetRotationDegrees10(SPEED_T * speed)
 
 }
 
-uint32_t Speed_ConvertRPMToDelta(SPEED_T * speed, uint32_t rpm) // HallPeriod unit in timer ticks
+uint32_t Speed_ConvertRPMToDelta(SPEED_T * speed, uint32_t rpm) // period unit in timer ticks
 {
 	if (rpm == 0)	return 0;
-	return speed->RevolutionsTimerFreq *60 / rpm; //timerFreqHz * 60 / nPolePairs / rpm;
+	return speed->RevolutionsTimerFreq * 60 / rpm; //timerFreqHz * 60 / nPolePairs / rpm;
 }
 
-uint32_t Speed_ConvertDeltaToRPM(SPEED_T * speed, uint32_t peroid) // HallPeriod unit in timer ticks
+uint32_t Speed_ConvertDeltaToRPM(SPEED_T * speed, uint32_t peroid) // period unit in timer ticks
 {
 	if (peroid == 0)	return 0;
-	return speed->RevolutionsTimerFreq *60 / peroid;
+	return speed->RevolutionsTimerFreq * 60 / peroid;
 }
 
 /*! @} */
@@ -362,22 +368,16 @@ int32_t Speed_GetRotaryVelocity(SPEED_T * speed)
 /******************************************************************************/
 /*! @{ */
 
-//void Speed_InitHallEncoder(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t timerCounterMax, uint32_t timerFreqHz, uint8_t nPolePairs, uint16_t distancePerRevolution, uint32_t pwmFreqHz)
-//{
-//
-//}
-
 /*!
  * Delta[s] 	= Delta[TimerTicks]/TimerFreq[Hz]
  * ERPM			= 1[Delta]*60[s]/Delta[s]
  * RPM 			= ERPM/PolePairs
  * RPM 			= 1[Delta]*60[s]*TimerFreq[Hz]/PolePairs/Delta[TimerTicks]
  */
-void Speed_InitHallEncoder(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t timerCounterMax, uint32_t timerFreqHz, uint8_t nPolePairs, uint32_t pwmFreqHz)
+void Speed_InitHallEncoder(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t timerCounterMax, uint32_t timerFreqHz, uint8_t nPolePairs, uint16_t distancePerRevolution, uint32_t pwmFreqHz)
 {
-	Speed_InitDelta(speed, timerCounterValue, timerCounterMax, timerFreqHz);
+	Speed_InitEncoder(speed, timerCounterValue, timerCounterMax, timerFreqHz, nPolePairs, distancePerRevolution);
 
-	speed->RevolutionsTimerFreq = timerFreqHz / nPolePairs;
 	speed->TimePerPWM = timerFreqHz / pwmFreqHz;
 }
 
@@ -393,12 +393,17 @@ uint32_t Speed_GetRPM(SPEED_T * speed)
 
 uint32_t Speed_GetERPM(SPEED_T * speed)
 {
-	return Speed_GetDeltaFreqCPM(speed); //speed->TimerFreq * 60 / speed->Delta;
+	return Speed_GetDeltaFreqCPM(speed); // speed->TimerFreq * 60 / speed->Delta;
 }
 
 uint32_t Speed_GetHallPeroid(SPEED_T * speed)
 {
 	return Speed_GetDelta(speed);
+}
+
+uint32_t Speed_GetGroundSpeed(SPEED_T * speed)
+{
+	return Speed_GetLinearSpeed(speed);
 }
 
 uint32_t Speed_GetPWMCyclesPerHallCycle(SPEED_T * speed)
@@ -409,26 +414,20 @@ uint32_t Speed_GetPWMCyclesPerHallCycle(SPEED_T * speed)
 uint32_t Speed_GetPWMCyclesPerCommutationStep(SPEED_T * speed)
 {
 	return speed->Delta / speed->TimePerPWM / 6;
-
 }
 
 uint32_t Speed_ConvertRPMToHallPeriod(SPEED_T * speed, uint32_t rpm) // HallPeriod unit in timer ticks
 {
-	if (rpm == 0) return 0;
-	return speed->RevolutionsTimerFreq * 60 / rpm ; //timerFreqHz * 60 / nPolePairs / rpm;
+	return Speed_ConvertRPMToDelta(speed, rpm); // timerFreqHz * 60 / nPolePairs / rpm;
 }
 
 uint32_t Speed_ConvertHallPeroidToRPM(SPEED_T * speed, uint32_t ticks) // HallPeriod unit in timer ticks
 {
-	if (ticks == 0) return 0;
-	return speed->RevolutionsTimerFreq * 60 / ticks;
+	return Speed_ConvertDeltaToRPM(speed, ticks);
 }
 
-/*! @} */
-
-
-uint32_t Speed_GetRoadSpeed(SPEED_T * speed, uint32_t wheelRatio, uint32_t motorRatio)
+uint32_t Speed_SetCalcGroundSpeed(SPEED_T * speed, uint32_t wheelDiameter, uint32_t gearRatio) // calculate distance per revolution using components
 {
-
+	//speed->DistancePerRevolution = wheelDiameter * gearRatio;
 }
-
+/*! @} */
