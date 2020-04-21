@@ -43,16 +43,17 @@ void Monitor_ZeroCurrentSensor(MONITOR_T * monitor)
 	monitor->IZero_ADCU = *monitor->I_ADCU;
 }
 
-ADC_DATA_T Monitor_GetSelectBEMF(MONITOR_T * monitor) { return *monitor->BackEMFSelect_ADCU; }
+//ADC_DATA_T Monitor_GetSelectBEMF(MONITOR_T * monitor) { return *monitor->BackEMFSelect_ADCU; }
 
+// select points to phase active during commutation
 void Monitor_SelectBEMFPhaseA(MONITOR_T * monitor) { monitor->BackEMFSelect_ADCU = monitor->BackEMFPhaseA_ADCU; }
 void Monitor_SelectBEMFPhaseB(MONITOR_T * monitor) { monitor->BackEMFSelect_ADCU = monitor->BackEMFPhaseB_ADCU; }
 void Monitor_SelectBEMFPhaseC(MONITOR_T * monitor) { monitor->BackEMFSelect_ADCU = monitor->BackEMFPhaseC_ADCU; }
 void Monitor_SelectBEMFBuffer(MONITOR_T * monitor) { monitor->BackEMFSelect_ADCU = &monitor->BackEMFBuffer_ADCU; }
 
-//void Monitor_SetBEMFPhaseA(MONITOR_T * monitor) { monitor->BackEMFBuffer_ADCU = *monitor->BackEMFPhaseA_ADCU; }
-//void Monitor_SetBEMFPhaseB(MONITOR_T * monitor) { monitor->BackEMFBuffer_ADCU = *monitor->BackEMFPhaseB_ADCU; }
-//void Monitor_SetBEMFPhaseC(MONITOR_T * monitor) { monitor->BackEMFBuffer_ADCU = *monitor->BackEMFPhaseC_ADCU; }
+void Monitor_CaptureBEMFPhaseA(MONITOR_T * monitor) { if (*monitor->BackEMFPhaseA_ADCU > 0) monitor->BackEMFBuffer_ADCU = *monitor->BackEMFPhaseA_ADCU; }
+void Monitor_CaptureBEMFPhaseB(MONITOR_T * monitor) { if (*monitor->BackEMFPhaseB_ADCU > 0) monitor->BackEMFBuffer_ADCU = *monitor->BackEMFPhaseB_ADCU; }
+void Monitor_CaptureBEMFPhaseC(MONITOR_T * monitor) { if (*monitor->BackEMFPhaseC_ADCU > 0) monitor->BackEMFBuffer_ADCU = *monitor->BackEMFPhaseC_ADCU; }
 
 void Monitor_CaptureBEMF(MONITOR_T * monitor)
 {
@@ -144,21 +145,3 @@ void Monitor_Init
 	monitor->VDivBackEMF 		= vDivBackEMF;
 	monitor->VDivTemperature 	= vDivTemperature;
 }
-
-
-///*-----------------------------------------------------------------------------
-//  Monitor
-// *----------------------------------------------------------------------------*/
-//ADC_DATA_T * Monitor_GetPtrBackEMFPhaseA 	(MONITOR_T * monitor) {return monitor->BackEMFPhaseA_ADCU;}
-//ADC_DATA_T * Monitor_GetPtrBackEMFPhaseB 	(MONITOR_T * monitor) {return monitor->BackEMFPhaseB_ADCU;}
-//ADC_DATA_T * Monitor_GetPtrBackEMFPhaseC 	(MONITOR_T * monitor) {return monitor->BackEMFPhaseC_ADCU;}
-//ADC_DATA_T * Monitor_GetPtrVBat 			(MONITOR_T * monitor) {return monitor->VBat_ADCU;}
-//ADC_DATA_T * Monitor_GetPtrI 				(MONITOR_T * monitor) {return monitor->I_ADCU;}
-//ADC_DATA_T * Monitor_GetPtrLSTemp 			(MONITOR_T * monitor) {return monitor->LSTemp_ADCU;}
-
-//void Monitor_MapBackEMFPhaseA	(MONITOR_T * monitor, uint8_t * address) {monitor->BackEMFPhaseA_ADCU = address;}
-//void Monitor_MapBackEMFPhaseB	(MONITOR_T * monitor, uint8_t * address) {monitor->BackEMFPhaseB_ADCU = address;}
-//void Monitor_MapBackEMFPhaseC	(MONITOR_T * monitor, uint8_t * address) {monitor->BackEMFPhaseC_ADCU = address;}
-//void Monitor_GetPtrVBat 		(MONITOR_T * monitor, uint8_t * address) {monitor->VBat_ADCU = address;}
-//void Monitor_GetPtrI 			(MONITOR_T * monitor, uint8_t * address) {monitor->I_ADCU = address;}
-//void Monitor_GetPtrLSTemp 		(MONITOR_T * monitor, uint8_t * address) {monitor->LSTemp_ADCU = address;}
