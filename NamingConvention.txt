@@ -1,0 +1,37 @@
+const			CONSTANT_NAME
+
+Struct typedef	STRUCTURE_NAME_T
+Struct			StructureName
+Struct Members  StructureVarible
+
+Enum typedef	ENUMERATED_NAME_T
+Enum    		EnumeratedVarible or enumeratedVarible
+Enum Members    ENUMERATED_MEMBER
+
+Public Functions    ModuleName_FunctionName(localVarible)				
+Private Functions   PrivateFunction()
+
+Global variables    ModuleName_GlobalVarible
+Private variables	PrivateVarible
+Local variables		localVarible
+Trivial Variables   i,n
+
+Module Functions	ModuleName_[Get/Set/Init/Start]Arguments(variables)
+Main Function		[Get/Set/Init/Start]Arguments(variables)
+
+Function Name Description Order		[Get/Set/Init/Start]VerbNounArgumentsAdjective(STRUCT_NAME_T * name, (type_t) * dest, (type_t) * src, (type_t) options) 
+									e.g CommutateMotor1PhaseAB
+Variable Name Description Order		GroupNounArgumentsAdjective	
+									e.g 
+
+/*!
+ * @brief A brief history of JavaDoc-style (C-style) comments.
+ *
+ * This is the typical JavaDoc-style C-style comment. It starts with two
+ * asterisks.
+ *
+ * @param theory Even if there is only one possible unified theory. it is just a
+ *               set of rules and equations.
+ */
+ 
+ /*! A brief history of JavaDoc-style (C-style) comments. */
