@@ -1,0 +1,13 @@
+/*
+ * KellyMotorShell.h
+ *
+ *  Created on: Apr 17, 2020
+ *      Author: FireSourcery
+ */
+
+#ifndef KELLY_LIBRARY_KELLYMOTORSHELL_KELLYMOTORSHELL_H_
+#define KELLY_LIBRARY_KELLYMOTORSHELL_KELLYMOTORSHELL_H_
+
+
+
+#endif /* KELLY_LIBRARY_KELLYMOTORSHELL_KELLYMOTORSHELL_H_ */

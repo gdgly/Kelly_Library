@@ -1,5 +1,5 @@
-#ifndef MEASURE_H_
-#define MEASURE_H_
+#ifndef _MEASURE_H_
+#define _MEASURE_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -18,44 +18,55 @@ typedef union
 
 typedef struct
 {
-	MEASURE_CHANNEL_T SampleGroupChannelSelect;
-	uint8_t SampleGroupChannelCount;
-	bool ADC_HWTrigger;
-	void(*ADC_OnEndISR)(void);
+	MEASURE_CHANNEL_T Channels;
+	uint8_t ChannelCount;
+	bool HWTrigger;
+	void(*OnEndISR)(void);
+	bool Overwrite;
+	uint8_t RepeatCount;
+	uint8_t RepeatCounter;
+} MEASURE_SAMPLE_T;
+
+typedef struct
+{
+	uint8_t (*ADC_Set)(const uint8_t * const channels, uint8_t channelCount, bool triggerMode);
+	uint8_t * ADC_SampleChannels;			/*!< Buffer to store translated ADC pin channels */
+	uint8_t	ADC_SampleChannelCountMax;		/*!< Max size of sample group, i.e size of ADC FIFO */
+	ADC_DATA_T (*ADC_GetResult)(uint8_t channel);
+	bool (*ADC_GetCompleteFlag)(void);
+	bool (*ADC_GetActiveFlag)(void);
+	void (*ADC_Disable)(void);
+	void (*ADC_DisableIRQ)(void);
+
+	MEASURE_SAMPLE_T * 	Sample;
+	MEASURE_SAMPLE_T 	SampleBuffer; //used in functions passing primitive data
 } MEASURE_T;
 
-bool Measure_StartADC(MEASURE_CHANNEL_T channels, uint8_t channelCount, bool triggerMode, void(*onEnd)(void), bool overwrite);
-//bool Measure_SetMeasureAdaptive(volatile MEASURE_CHANNEL_T channels, uint8_t channelCount, bool triggerMode, void(*onEnd)(void));
+typedef enum
+{
+	MEASURE_SW_TRIGGER = 0,
+	MEASURE_HW_TRIGGER = 1,
+} MEASURE_TRIGGER_MODE_T;
 
-bool Measure_TriggerMeasureChannel(volatile uint8_t channel, void(*onEnd)(void));
-bool Measure_StartMeasureChannel(volatile uint8_t channel, void(*onEnd)(void));
-bool Measure_TriggerMeasureSampleGroup(const uint8_t * channels, uint8_t channelCount, void(*onEnd)(void));
-bool Measure_StartMeasureSampleGroup(const uint8_t * channels, uint8_t channelCount, void(*onEnd)(void));
-bool Measure_TriggerMeasureChannelOverwrite(volatile uint8_t channel, void(*onEnd)(void));
-bool Measure_StartMeasureChannelOverwrite(volatile uint8_t channel, void(*onEnd)(void));
-bool Measure_TriggerMeasureSampleGroupOverwrite(const uint8_t * channels, uint8_t channelCount, void(*onEnd)(void));
-bool Measure_StartMeasureSampleGroupOverwrite(const uint8_t * channels, uint8_t channelCount, void(*onEnd)(void));
+typedef enum
+{
+	MEASURE_ERROR_OK = 0,
+	MEASURE_ERROR_ = 1,
+} MEASURE_ERROR_CODE_T;
 
-void Measure_WaitForResult();
+extern void Measure_CompleteISR(MEASURE_T * measure);
 
-bool Measure_SaveValue(volatile ADC_DATA_T * value, uint8_t channel);
-bool Measure_MapAddress(volatile ADC_DATA_T ** address, uint8_t channel);
-volatile ADC_DATA_T Measure_GetValue(uint8_t channel);
-volatile ADC_DATA_T * Measure_GetAddress(uint8_t channel);
-//void Measure_SetOnEndISR(void (*fp)(void));
+bool Measure_Start(MEASURE_T * measure, MEASURE_SAMPLE_T * sample);
+bool Measure_StartADC(MEASURE_T * measure, MEASURE_CHANNEL_T channels, uint8_t channelCount, bool hwTrigger, void(*onEnd)(void), bool overwrite);
 
-void Measure_Init
-(
-	uint8_t channelCount,
-	uint8_t sampleGroupMax,
-	const uint8_t * mapChannelToPin,
-	ADC_DATA_T * channelResultBuffer,
-	uint8_t * adcChannelPinBuffer,
-	uint8_t (*setADC)(const uint8_t * const channels, uint8_t channelCount, bool triggerMode),
-	ADC_DATA_T (*getADCResult)(uint8_t),
-	void (*disableADC)(void),
-	void (*disableIRQ)(void)
-);
+bool Measure_StartChannel					(MEASURE_T * measure, uint8_t channel, void(*onEnd)(void));
+bool Measure_StartChannelOverwrite			(MEASURE_T * measure, uint8_t channel, void(*onEnd)(void));
+bool Measure_TriggerChannel					(MEASURE_T * measure, uint8_t channel, void(*onEnd)(void));
+bool Measure_TriggerChannelOverwrite		(MEASURE_T * measure, uint8_t channel, void(*onEnd)(void));
+bool Measure_StartChannelGroup				(MEASURE_T * measure, const uint8_t * channels, uint8_t channelCount, void(*onEnd)(void));
+bool Measure_StartChannelGroupOverwrite		(MEASURE_T * measure, const uint8_t * channels, uint8_t channelCount, void(*onEnd)(void));
+bool Measure_TriggerChannelGroup			(MEASURE_T * measure, const uint8_t * channels, uint8_t channelCount, void(*onEnd)(void));
+bool Measure_TriggerChannelGroupOverwrite	(MEASURE_T * measure, const uint8_t * channels, uint8_t channelCount, void(*onEnd)(void));
 
 
 #endif

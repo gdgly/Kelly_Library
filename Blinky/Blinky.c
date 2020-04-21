@@ -19,6 +19,7 @@ void Blinky_Toggle(BLINKY_T * blinky)
 		blinky->On();
 	}
 }
+
 /*
  * @brief toggle blink switch
  *
@@ -29,6 +30,7 @@ void Blinky_Init(BLINKY_T * blinky, void (*on)(void), void (*off)(void))
 	blinky->Off = off;
 	blinky->On = on;
 }
+
 /*
  * @brief intialize blink switch
  *
