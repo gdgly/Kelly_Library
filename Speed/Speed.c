@@ -18,7 +18,7 @@ void Speed_InitDelta(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t tim
 {
 	speed->TimerCounterValue = timerCounterValue;
 	speed->TimerCounterMax = timerCounterMax;
-	speed->TimerFreq = timerFreqHz;
+	speed->TimerCounterFreq = timerFreqHz;
 }
 
 /******************************************************************************/
@@ -35,6 +35,13 @@ inline void Speed_CaptureDeltaISR(SPEED_T * speed)
 		speed->Delta = speed->TimerCounterMax - speed->TimerCounterValueSaved + *speed->TimerCounterValue;
 	else
 		speed->Delta = *speed->TimerCounterValue - speed->TimerCounterValueSaved;
+
+//	if (*speed->TimerCounterValue > speed->TimerCounterValueSaved)
+//		speed->Delta = *speed->TimerCounterValue - speed->TimerCounterValueSaved;
+//	else if (*speed->TimerCounterValue < speed->TimerCounterValueSaved) // TimerCounter overflow
+//		speed->Delta = speed->TimerCounterMax - speed->TimerCounterValueSaved + *speed->TimerCounterValue;
+//	else  // == 0
+//		return;
 
 	speed->TimerCounterValueSaved = *speed->TimerCounterValue;
 
@@ -57,14 +64,6 @@ void Speed_CaptureDeltaPoll(SPEED_T * speed, bool reference)
 	speed->ReferenceSignalSaved = reference;
 }
 
-//void Speed_LongDeltaPoll(SPEED_T * speed)
-//{
-//	if (speed->Delta == speed->DeltaSaved)
-//	{
-//		//return delta stoped, return 0 speed
-//	}
-//}
-
 volatile uint32_t * Speed_GetPtrDelta(SPEED_T * speed)
 {
 	return &speed->Delta;
@@ -77,27 +76,27 @@ uint32_t Speed_GetDeltaTicks(SPEED_T * speed) // unit in timer ticks
 
 uint32_t Speed_GetDeltaMillis(SPEED_T * speed) // unit in milliseconds
 {
-	return speed->Delta * 1000 / speed->TimerFreq;
+	return speed->Delta * 1000 / speed->TimerCounterFreq;
 }
 
 uint32_t Speed_GetDeltaMicros(SPEED_T * speed) // unit in microseconds
 {
 	if (speed->Delta > (UINT32_MAX/1000000)) // overflows if DeltaPeriod > 4294
-		return speed->Delta * (1000000 / speed->TimerFreq);
+		return speed->Delta * (1000000 / speed->TimerCounterFreq);
 	else
-		return speed->Delta * 1000000 / speed->TimerFreq;
+		return speed->Delta * 1000000 / speed->TimerCounterFreq;
 }
 
 uint32_t Speed_GetDeltaFreq(SPEED_T * speed) // unit in Hz
 {
 	if (speed->Delta == 0)	return 0;
-	else					return speed->TimerFreq / speed->Delta;
+	else					return speed->TimerCounterFreq / speed->Delta;
 }
 
 uint32_t Speed_GetDeltaFreqCPM(SPEED_T * speed) // unit in cycles per minute
 {
 	if (speed->Delta == 0)	return 0;
-	else					return speed->TimerFreq * 60 / speed->Delta;
+	else					return speed->TimerCounterFreq * 60 / speed->Delta;
 }
 
 //uint32_t Speed_ResetTimer(SPEED_T * speed)
@@ -115,6 +114,35 @@ void Speed_ZeroDeltaCount(SPEED_T * speed)
 	speed->DeltaCount = 0;
 }
 /*! @} */ // End of Delta submodule
+
+
+
+void Speed_DeltaOverflowDetectionISR(SPEED_T * speed)
+{
+	if (*speed->DeltaOverflowTimer - speed->DeltaOverflowTimerSaved > speed->DeltaOverflowTime)
+	{
+		speed->DeltaOverflowTimerSaved = *speed->DeltaOverflowTimer;
+
+		speed->Delta = 0;
+		//speed->Delta = speed->Delta + (*speed->DeltaOverflowTimer - speed->DeltaOverflowTimerSaved) * speed->TimerCounterMax / speed->DeltaOverflowTime;
+	}
+
+}
+void Speed_DeltaOverflowDetectionPoll(SPEED_T * speed)
+{
+	if(speed->DeltaCount - speed->DeltaCountSaved < 2)
+		Speed_DeltaOverflowDetectionISR(speed);
+}
+
+
+
+void Speed_InitDeltaOverflowDetection(SPEED_T * speed, volatile uint32_t * deltaOverflowTimer)
+{
+	speed->DeltaOverflowTimer = deltaOverflowTimer;
+
+	speed->DeltaOverflowTime = speed->TimerCounterMax * 1000 / speed->TimerCounterFreq;
+}
+
 
 
 /******************************************************************************/
@@ -184,12 +212,12 @@ void Speed_InitEncoder(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t t
 	speed->DistancePerRevolution = distancePerRevolution;
 	speed->DistancePerSignal = distancePerRevolution/pulsePerRevolution; // only used for GetDistancePerPulse, use components for precisions in other cases
 
-	if (distancePerRevolution > 0xFFFFFFFF / speed->TimerFreq) // if speed->TimerFreq * distancePerRevolution overflow
-		speed->DistanceTimerFreq = distancePerRevolution * (speed->TimerFreq / pulsePerRevolution);
+	if (distancePerRevolution > 0xFFFFFFFF / speed->TimerCounterFreq) // if speed->TimerFreq * distancePerRevolution overflow
+		speed->DistanceTimerFreq = distancePerRevolution * (speed->TimerCounterFreq / pulsePerRevolution);
 	else
-		speed->DistanceTimerFreq = speed->TimerFreq * distancePerRevolution / pulsePerRevolution; // distancePerRevolution max input ~100,000
+		speed->DistanceTimerFreq = speed->TimerCounterFreq * distancePerRevolution / pulsePerRevolution; // distancePerRevolution max input ~100,000
 
-	speed->RevolutionsTimerFreq = speed->TimerFreq / pulsePerRevolution;
+	speed->RevolutionsTimerFreq = speed->TimerCounterFreq / pulsePerRevolution;
 }
 
 uint32_t Speed_GetDistancePerPulse(SPEED_T * speed)
@@ -206,7 +234,7 @@ uint32_t Speed_GetDistancePerPulse(SPEED_T * speed)
 uint32_t Speed_GetLinearSpeed(SPEED_T * speed) // unit in distance per second
 {
 	if (speed->Delta == 0)	return 0;
-	return speed->DistanceTimerFreq / speed->Delta; // (distancePerRevolution/pulsePerRevolution * speed->TimerFreq) / speed->DeltaPeriod;
+	return speed->DistanceTimerFreq / speed->Delta; // (distancePerRevolution/pulsePerRevolution * speed->TimerCounterFreq) / speed->DeltaPeriod;
 }
 
 /*!
@@ -317,9 +345,10 @@ uint32_t Speed_ConvertDeltaToRPM(SPEED_T * speed, uint32_t peroid) // period uni
  */
 /******************************************************************************/
 /*! @{ */
-void Speed_InitQuadratureEncoder(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t timerCounterMax, uint32_t timerFreqHz, uint32_t pulsePerRevolution, uint32_t distancePerRevolution, bool isPositiveALeadB)
+void Speed_InitQuadratureEncoder(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t timerCounterMax, uint32_t timerFreqHz, uint32_t pulsePerRevolution, uint32_t distancePerRevolution, bool (*phaseB)(void), bool isPositiveALeadB)
 {
 	Speed_InitEncoder(speed, timerCounterValue, timerCounterMax, timerFreqHz, pulsePerRevolution, distancePerRevolution);
+	speed->GetPhaseBSignal = phaseB;
 	speed->ALeadB = isPositiveALeadB;
 }
 
@@ -393,7 +422,7 @@ uint32_t Speed_GetRPM(SPEED_T * speed)
 
 uint32_t Speed_GetERPM(SPEED_T * speed)
 {
-	return Speed_GetDeltaFreqCPM(speed); // speed->TimerFreq * 60 / speed->Delta;
+	return Speed_GetDeltaFreqCPM(speed); // speed->TimerCounterFreq * 60 / speed->Delta;
 }
 
 uint32_t Speed_GetHallPeroid(SPEED_T * speed)

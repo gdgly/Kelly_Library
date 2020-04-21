@@ -1,23 +1,18 @@
 #include "Measure.h"
 
 //ADC Wrapper Module
-// todo implement with queue:
-// Ensures at least 1 conversion is complete, before user can overwrite the initiated measurement
-// software trigger will run once, cannot back overwritten until completed
-// hw trigger will run least once, cannot back overwritten until first measurement completed
-// restores hw trigger trigger, if a software trigger takes place while the hw trigger is active
-
 
 // Module Shared
+static volatile ADC_DATA_T *	ChannelResultBuffer;	/*!< Measure Result Buffer, measure channel index*/
+static volatile uint32_t *	 	ChannelSumBuffer;		/*!< sum if multiple measurements are required*/
+static const uint8_t * 			ChannelToADCPin;		/*!< Map to translate index channels to ADC pin channels */
+static uint8_t					ChannelCount;			/*!< Size of Result Buffer, ADC channel count */
 //extern const uint8_t MEASURE_CHANNEL_TO_ADC_PIN[]; // User define, shared for all adcs and samples
 //extern volatile ADC_DATA_T 	Measure_ChannelResultBuffer[];		/*!< Measure Result Buffer, measure channel index*/
 //extern volatile uint32_t 	Measure_ChannelSumBuffer[];			/*!< sum if multiple measurements are required*/
 //#define MEASURE_CHANNEL_COUNT (sizeof(Measure_ChannelResultBuffer)/sizeof(ADC_DATA_T))
 
-static volatile ADC_DATA_T *	ChannelResultBuffer;	/*!< Measure Result Buffer, measure channel index*/
-static volatile uint32_t *	 	ChannelSumBuffer;		/*!< sum if multiple measurements are required*/
-static const uint8_t * 			ChannelToADCPin;		/*!< Map to translate index channels to ADC pin channels */
-static uint8_t					ChannelCount;			/*!< Size of Result Buffer, ADC channel count */
+
 
 static void (*DisableIRQ)(void);	/*!< critical section */
 static void (*EnableIRQ)(void);		/*!< critical section */
@@ -39,22 +34,26 @@ static inline bool StartADC(MEASURE_T * measure, MEASURE_CHANNEL_T channels, uin
 		for (i = 0; i < channelCount; i++)
 		{
 			if (channels.ChannelGroup[i] > ChannelCount - 1) // invalid channel
+			{
+				EnableIRQ();
 				return false;
-
-			ChannelResultBuffer[channels.ChannelGroup[i]] = 0;
+			}
+			//ChannelResultBuffer[channels.ChannelGroup[i]] = 0; //todo settings to reset before measure
 			measure->ADC_SampleChannels[i] = ChannelToADCPin[channels.ChannelGroup[i]];
 		}
 	}
 	else
 	{
 		if (channels.ChannelSingle > ChannelCount - 1)
+		{
+			EnableIRQ();
 			return false;
-
-		ChannelResultBuffer[channels.ChannelSingle] = 0;
+		}
+		//ChannelResultBuffer[channels.ChannelSingle] = 0;
 		measure->ADC_SampleChannels[0] = ChannelToADCPin[channels.ChannelSingle];
 	}
 
-	measure->ADC_Set(measure->ADC_SampleChannels, channelCount, hwTrigger);	 /*!< Enables interrupt */
+	measure->ADC_Set(measure->ADC_SampleChannels, channelCount, hwTrigger);	 /*!< Enables adc complete interrupt */
 
 	if (EnableIRQ) EnableIRQ();
 
@@ -126,6 +125,11 @@ bool Measure_Start(MEASURE_T * measure, MEASURE_SAMPLE_T * sample)
 // queue implementation
 // places measure at head of q, overwrite to overwrite current
 // place at end of queue
+// todo implement with queue:
+// Ensures at least 1 conversion is complete, before user can overwrite the initiated measurement
+// software trigger will run once, cannot back overwritten until completed
+// hw trigger will run least once, cannot back overwritten until first measurement completed
+// restores hw trigger trigger, if a software trigger takes place while the hw trigger is active
 bool Measure_Queue(MEASURE_T * measure, MEASURE_SAMPLE_T * sample)
 {
 

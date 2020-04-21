@@ -10,11 +10,16 @@ typedef struct
     volatile uint32_t TimerCounterValueSaved;	/*!< 2nd time sample used to calculate delta */
     volatile uint32_t Delta;					/*!< Timer ticks between 2 events. Timer tick units */
     uint32_t TimerCounterMax; 					/*!< For overflow cases */
-    uint32_t TimerFreq;							/*!< For delta period in standard time units */
+    uint32_t TimerCounterFreq;					/*!< For delta period in standard time units */
     //bool (*GetReferenceSignal)();				/*!< bit signal will not have individually addressable memory */
 	bool ReferenceSignalSaved;					/*!< Saved reference signal, used in case of polling time samples */
 	volatile uint32_t DeltaCount;				/*!< Track number of deltas, used in extensions */
+
 	//need data to determine timer validity? invalid for first time sample. invalid for time > than 1 timer cycle.
+	volatile uint32_t * DeltaOverflowTimer; //overflow timer in millis
+	volatile uint32_t DeltaOverflowTimerSaved;
+	uint32_t DeltaOverflowTime;
+	volatile uint32_t DeltaCountSaved;
 
 	uint32_t DistancePerSignal;			/*!< User defined */
 	uint32_t DistanceTimerFreq;			/*!< (DistancePerDelta * TimerFreq) */

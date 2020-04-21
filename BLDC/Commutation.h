@@ -94,6 +94,7 @@ COMMUTATION_T;
 
 extern void Commutation_ISR(COMMUTATION_T * commutation, uint16_t pwm);
 bool Commutation_Poll(COMMUTATION_T * commutation, uint16_t pwm);
+void Commutation_SetPhasePWM(COMMUTATION_T * commutation, uint16_t pwm);
 //void (*BLDC_Commutation_GetFunctionActivatePhase(COMMUTATION_T * commutation))(uint16_t);
 //void (*BLDC_Commutation_GetFunctionSetPhasePWM(COMMUTATION_T * commutation))(uint16_t);
 void Commutation_SetDirection(COMMUTATION_T * commutation, COMMUTATION_DIRECTION_T dir);

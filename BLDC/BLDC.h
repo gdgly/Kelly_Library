@@ -19,66 +19,42 @@
 
 typedef enum
 {
-	MOTOR_STATE_STANDBY,
-	MOTOR_STATE_STARTUP,
-	MOTOR_STATE_FAULT,
-	MOTOR_STATE_RUN,
-}  MOTOR_STATE_T;
+	MOTOR_MODE_STANDBY,
+	MOTOR_MODE_STARTUP,
+	MOTOR_MODE_FAULT,
+	MOTOR_MODE_RUN,
+}  MOTOR_MODE_T;
 
 typedef struct 
 {
-	MOTOR_STATE_T State;
-	COMMUTATION_T * Commutation;
-	SPEED_T * Speed;
-	PID_T * PID;
-	VOLTAGE_DIVIDER_T * VDivBackEMFPhaseA;
-	VOLTAGE_DIVIDER_T * VDivBackEMFPhaseB;
-	VOLTAGE_DIVIDER_T * VDivBackEMFPhaseC;
-	VOLTAGE_DIVIDER_T * VDivBat;
-	VOLTAGE_DIVIDER_T * VDivTemperature;
-	//BLDC_ERROR_T Error;
+	MOTOR_MODE_T 	MotorMode;
+	COMMUTATION_T 	* Commutation;
+	SPEED_T 		* Speed;
+	PID_T 			* PID;
+	MONITOR_T 		* Monitor;
 
 	void(*ShortMotor)(void);
 	void(*FloatMotor)(void);
+	//uint16_t OptimalRegen;
 
 	uint16_t PWM;
-	uint16_t PWMMax;
+	uint16_t PWMMax; // PWM 100% duty cycle value, use monitor for physical speed limit
 
-//  speed->EventPeriod
-//	uint32_t PIDOutputHallPeriod;
-//	uint32_t PIDSetPointHallPeriod;
 	uint32_t JogSteps;
 	uint32_t StepCount;
 
 	uint32_t SetRPM;
 	uint32_t RPMMax; //set proportional to max voltage?
 
+	//  speed->EventPeriod
+	//	uint32_t PIDOutputHallPeriod;
+	//	uint32_t PIDSetPointHallPeriod;
 	uint16_t SetVoltage; //desired speed
-
-	//uint16_t OptimalRegen;
-
-	//Monitor
-
-	uint8_t IZero_ADCU; // == 125
-	uint8_t IMax_ADCU;
-
-	uint8_t OverVoltage_ADCU;
-	uint8_t UnderVoltage_ADCU;
-
-	uint8_t * BackEMFSelect_ADCU;
-
-	uint8_t BackEMF_ADCU;
-
-	uint8_t * BackEMFPhaseA_ADCU;
-	uint8_t * BackEMFPhaseB_ADCU;
-	uint8_t * BackEMFPhaseC_ADCU;
-	uint8_t * VBat_ADCU;
-	uint8_t * I_ADCU;
-	uint8_t * LSTemp_ADCU;
 }
 BLDC_CONTROLLER_T;
 
-
+void BLDC_ProcessRunPoll(BLDC_CONTROLLER_T * bldc);
+void BLDC_ProcessRunHallISR(BLDC_CONTROLLER_T * bldc);
 
 
 #endif /* BLDC_H_ */

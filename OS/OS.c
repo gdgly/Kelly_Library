@@ -34,11 +34,11 @@
 #include "OS.h"
 
 static volatile uint32_t * TimerCounter; // User app must provide millis timer.
-static volatile uint32_t TimerFreq;			//1000 ticks per second using millis
-static volatile uint32_t ThreadPeriodMax; //updateInterval max in between ticks
-static volatile uint32_t ThreadPeriodMin; //updateInterval min in between ticks
+static uint32_t TimerFreq;			//1000 ticks per second using millis
+static uint32_t ThreadPeriodMax; //updateInterval max in between ticks
+static uint32_t ThreadPeriodMin; //updateInterval min in between ticks
 
-inline static void ProcThread(LITE_FX_OS_THREAD_T * thread)
+inline static bool ProcThread(LITE_FX_OS_THREAD_T * thread)
 {
 	if (thread->OneShot)
 	{
@@ -46,16 +46,19 @@ inline static void ProcThread(LITE_FX_OS_THREAD_T * thread)
 		{
 			thread->TicksRemaining--;
 			if (thread->Function) thread->Function();
+			return true;
 		}
 		else
 		{
 			thread->Run = false;
 			if (thread->OnComplete) thread->OnComplete();
+			return false;
 		}
 	}
 	else
 	{
 		if (thread->Function) thread->Function();
+		return true;
 	}
 }
 
@@ -72,20 +75,27 @@ bool LiteFXOS_ProcThread(LITE_FX_OS_THREAD_T * thread)
 {
 	if (!thread->Run)	return false;
 
-	if(*TimerCounter - thread->LastUpdate < thread->UpdateInterval)	return 0;
-
-	if(thread->Context && thread->LoadContext) thread->LoadContext(thread->Context);
+	if(*TimerCounter - thread->LastUpdate < thread->UpdateInterval)	return false;
 
 	thread->LastUpdate = *TimerCounter;
-	ProcThread(thread);
-	return true;
-}
 
-void LiteFXOS_ProcThreadNRepeat(LITE_FX_OS_THREAD_T * thread, uint32_t n)
-{
 	if(thread->Context && thread->LoadContext) thread->LoadContext(thread->Context);
 
-	for(uint32_t t = 0; t < n; t++)	ProcThread(thread);
+	if (ProcThread(thread))	return true;
+
+	return false;
+}
+
+uint32_t LiteFXOS_ProcThreadNRepeat(LITE_FX_OS_THREAD_T * thread, uint32_t n)
+{
+	uint8_t count = 0;
+
+	if(thread->Context && thread->LoadContext) thread->LoadContext(thread->Context);
+
+	for(uint32_t t = 0; t < n; t++)
+		if (ProcThread(thread)) count++;
+
+	return count;
 }
 
 /*-----------------------------------------------------------------------------
@@ -204,41 +214,41 @@ void LiteFXOS_StartThreadFunction(LITE_FX_OS_THREAD_T * thread, void (* function
 	if (thread->OneShot) thread->TicksRemaining = thread->Ticks;
 }
 
-void LiteFXOS_StartThreadPeriodicArgContextPeriod(LITE_FX_OS_THREAD_T * thread, void (*function)(void), void * memory, void (* loadMemory)(void*), uint32_t updateInterval)
-{
-	LiteFXOS_InitThreadPeriodicArgContextPeriod(thread, function, memory, loadMemory, updateInterval);
-	thread->Run				= true;
-}
-
-void LiteFXOS_StartThreadPeriodicArgContextFreq(LITE_FX_OS_THREAD_T * thread, void (*function)(void), void * memory, void (* loadMemory)(void*), uint32_t ticksPerSecond)
-{
-	LiteFXOS_InitThreadPeriodicArgContextFreq(thread, function, memory, loadMemory, ticksPerSecond);
-	thread->Run				= true;
-}
-
-void LiteFXOS_StartThreadOneShotArgContextTicksPeriod(LITE_FX_OS_THREAD_T * thread, void (*function)(void), void * memory, void (* loadMemory)(void*), uint32_t ticks, uint32_t updateInterval, void(*onComplete)(void))
-{
-	LiteFXOS_InitThreadOneShotArgContextTicksPeriod(thread, function, memory, loadMemory, ticks, updateInterval, onComplete);
-	thread->Run				= true;
-}
-
-void LiteFXOS_StartThreadOneShotArgContextTicksFreq(LITE_FX_OS_THREAD_T * thread, void (*function)(void), void * memory, void (* loadMemory)(void*), uint32_t ticks, uint32_t ticksPerSecond, void(*onComplete)(void))
-{
-	LiteFXOS_InitThreadOneShotArgContextTicksFreq(thread, function, memory, loadMemory, ticks, ticksPerSecond, onComplete);
-	thread->Run				= true;
-}
-
-void LiteFXOS_StartThreadOneShotArgContextTicksTime(LITE_FX_OS_THREAD_T * thread, void (*function)(void), void * memory, void (* loadMemory)(void*), uint32_t ticks, uint32_t updateInterval, void(*onComplete)(void))
-{
-	LiteFXOS_InitThreadOneShotArgContextTicksTime(thread, function, memory, loadMemory, ticks, updateInterval, onComplete);
-	thread->Run				= true;
-}
-
-void LiteFXOS_StartThreadOneShotArgContextTimeFreq(LITE_FX_OS_THREAD_T * thread, void (*function)(void), void * memory, void (* loadMemory)(void*), uint32_t updateInterval, uint32_t ticksPerSecond, void(*onComplete)(void))
-{
-	LiteFXOS_InitThreadOneShotArgContextTimeFreq(thread, function, memory, loadMemory, updateInterval, ticksPerSecond, onComplete);
-	thread->Run				= true;
-}
+//	void LiteFXOS_StartThreadPeriodicArgContextPeriod(LITE_FX_OS_THREAD_T * thread, void (*function)(void), void * memory, void (* loadMemory)(void*), uint32_t updateInterval)
+//	{
+//		LiteFXOS_InitThreadPeriodicArgContextPeriod(thread, function, memory, loadMemory, updateInterval);
+//		thread->Run				= true;
+//	}
+//
+//	void LiteFXOS_StartThreadPeriodicArgContextFreq(LITE_FX_OS_THREAD_T * thread, void (*function)(void), void * memory, void (* loadMemory)(void*), uint32_t ticksPerSecond)
+//	{
+//		LiteFXOS_InitThreadPeriodicArgContextFreq(thread, function, memory, loadMemory, ticksPerSecond);
+//		thread->Run				= true;
+//	}
+//
+//	void LiteFXOS_StartThreadOneShotArgContextTicksPeriod(LITE_FX_OS_THREAD_T * thread, void (*function)(void), void * memory, void (* loadMemory)(void*), uint32_t ticks, uint32_t updateInterval, void(*onComplete)(void))
+//	{
+//		LiteFXOS_InitThreadOneShotArgContextTicksPeriod(thread, function, memory, loadMemory, ticks, updateInterval, onComplete);
+//		thread->Run				= true;
+//	}
+//
+//	void LiteFXOS_StartThreadOneShotArgContextTicksFreq(LITE_FX_OS_THREAD_T * thread, void (*function)(void), void * memory, void (* loadMemory)(void*), uint32_t ticks, uint32_t ticksPerSecond, void(*onComplete)(void))
+//	{
+//		LiteFXOS_InitThreadOneShotArgContextTicksFreq(thread, function, memory, loadMemory, ticks, ticksPerSecond, onComplete);
+//		thread->Run				= true;
+//	}
+//
+//	void LiteFXOS_StartThreadOneShotArgContextTicksTime(LITE_FX_OS_THREAD_T * thread, void (*function)(void), void * memory, void (* loadMemory)(void*), uint32_t ticks, uint32_t updateInterval, void(*onComplete)(void))
+//	{
+//		LiteFXOS_InitThreadOneShotArgContextTicksTime(thread, function, memory, loadMemory, ticks, updateInterval, onComplete);
+//		thread->Run				= true;
+//	}
+//
+//	void LiteFXOS_StartThreadOneShotArgContextTimeFreq(LITE_FX_OS_THREAD_T * thread, void (*function)(void), void * memory, void (* loadMemory)(void*), uint32_t updateInterval, uint32_t ticksPerSecond, void(*onComplete)(void))
+//	{
+//		LiteFXOS_InitThreadOneShotArgContextTimeFreq(thread, function, memory, loadMemory, updateInterval, ticksPerSecond, onComplete);
+//		thread->Run				= true;
+//	}
 
 
 /*-----------------------------------------------------------------------------

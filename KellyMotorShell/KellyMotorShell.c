@@ -168,7 +168,26 @@ int Cmd_phase(int argc, char ** argv)
 
 
 
+void PrintDebug(void)
+{
+	//printf("Loop Time is %d \n", LoopDelta);
+	//printf("PWM %d \n", Motor1.PWM);
+	printf("BackEMF A ADCU %d \n", *Motor1.BackEMFPhaseA_ADCU);
+	printf("BackEMF B ADCU %d \n", *Motor1.BackEMFPhaseB_ADCU);
+	//printf("Battery Voltage %d \n", VoltageDivider_GetVoltage(&DividerCommon, *Motor1.VBat_ADCU));
+	printf("BackEMF A %d \n", VoltageDivider_GetVoltage(&DividerCommon, *Motor1.BackEMFPhaseA_ADCU));
+	printf("BackEMF B %d \n", VoltageDivider_GetVoltage(&DividerCommon, *Motor1.BackEMFPhaseB_ADCU));
+	printf("BackEMF Select %d \n", VoltageDivider_GetVoltage(&DividerCommon, *Motor1.BackEMFSelect_ADCU));
+	printf("Hall Delta %d \n", Speed_GetDeltaTicks(&Motor1Speed));
+	//printf("RPM %d \n", Speed_GetRPM(&Motor1Speed));
+	printf("I ADCU %d \n", *Motor1.I_ADCU);
 
+//	printf("Motor Desired %d \n", *Motor1PID.SetPoint);
+//	printf("Motor Input %d \n", *Motor1PID.Input);
+//	printf("Motor Error (Measured - Input) %d \n", *Motor1PID.SetPoint - *Motor1PID.Input);
+
+	printf("\n");
+}
 int Cmd_print(int argc, char ** argv)
 {
 //	//printf("Loop Time is %d \n", LoopDelta);

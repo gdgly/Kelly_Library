@@ -54,6 +54,8 @@ typedef enum
 	MEASURE_ERROR_ = 1,
 } MEASURE_ERROR_CODE_T;
 
+extern void Measure_CompleteISR(MEASURE_T * measure);
+
 bool Measure_Start(MEASURE_T * measure, MEASURE_SAMPLE_T * sample);
 bool Measure_StartADC(MEASURE_T * measure, MEASURE_CHANNEL_T channels, uint8_t channelCount, bool hwTrigger, void(*onEnd)(void), bool overwrite);
 

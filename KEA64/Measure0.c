@@ -8,4 +8,11 @@
 #include "Measure.h"
 #include "ADC.h"
 
-// ADC_ISR(){}
+//MEASURE_T MeasureADC0;
+//
+//extern MEASURE_T MeasureADC0;
+//
+//ADC_ISR ()
+//{
+//	Measure_CompleteISR(&MeasureADC0);
+//}

@@ -31,5 +31,5 @@ void ADC_AbortConversion(void);
 void ADC_DisableInterrupt(void);
 void ADC_EnableInterrupt(void);
 
-void ADC_Init(void);
+void ADC_Init(uint32_t);
 #endif
