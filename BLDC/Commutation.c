@@ -6,11 +6,7 @@
  */
 
 #include "Commutation.h"
-/*!
- * @brief Set CommuntationTable
- * @param[in] commutation - Target Phase
- * @param[in] pwm - Phase pwm percent
- */
+
 inline void BLDC_Commutation_ISR(BLDC_COMMUTATION_T * commutation, uint8_t pwm)
 {
 	//	if (commutation->Direction == DIRECTION_CCW)
@@ -18,12 +14,7 @@ inline void BLDC_Commutation_ISR(BLDC_COMMUTATION_T * commutation, uint8_t pwm)
 	commutation->CommuntationTable[commutation->GetHallState()].ActivatePhase(pwm);
 }
 
-/*!
- * @brief set CommutationPhase value
- * @param[in] commutation - Target Phase
- * @param[in] pwm - Phase pwm percent
- * @return true if value changed or false if value not changed
- */
+
 bool BLDC_Commutation_Poll(BLDC_COMMUTATION_T * commutation, uint8_t pwm)
 {
 	if (commutation->SavedHallState != commutation->GetHallState())
@@ -35,29 +26,17 @@ bool BLDC_Commutation_Poll(BLDC_COMMUTATION_T * commutation, uint8_t pwm)
 
 	return false;
 }
-/*!
- * @brief Get phase hall status
- * @param[in] commutation - Target Phase
- * @return phase hall status
- */
+
 void (*BLDC_Commutation_GetFunctionActivatePhase(BLDC_COMMUTATION_T * commutation))(uint8_t)
 {
 	return commutation->CommuntationTable[commutation->GetHallState()].ActivatePhase;
 }
-/*!
- * @brief Get phase pwm
- * @param[in] commutation - Target Phase
- * @return pwm value
- */
+
 void (*BLDC_Commutation_GetFunctionSetPhasePWM(BLDC_COMMUTATION_T * commutation))(uint8_t)
 {
 	return commutation->CommuntationTable[commutation->GetHallState()].SetPhasePWM;
 }
-/*!
- * @brief Change direction
- * @param[in] commutation - Target Phase
- * @param[in] dir - target direction
- */
+
 void BLDC_Commutation_SetDirection(BLDC_COMMUTATION_T * commutation, BLDC_DIRECTION_T dir) 
 {
 	// alternatively during commutation
@@ -68,29 +47,19 @@ void BLDC_Commutation_SetDirection(BLDC_COMMUTATION_T * commutation, BLDC_DIRECT
 	if (dir == DIRECTION_CW)		commutation->CommuntationTable = commutation->CommuntationTableCW;
 	else /*(dir == DIRECTION_CCW)*/	commutation->CommuntationTable = commutation->CommuntationTableCCW;
 }
-/*!
- * @brief Reverse direction
- * @param[in] commutation - Target Phase
- *
- */
+
 void BLDC_Commutation_SetDirectionReverse(BLDC_COMMUTATION_T * commutation) 
 {
 	commutation->Direction = ~commutation->Direction;
 	if (commutation->Direction == DIRECTION_CW)			commutation->CommuntationTable = commutation->CommuntationTableCCW;
 	else /*(commutation->Direction == DIRECTION_CCW)*/	commutation->CommuntationTable = commutation->CommuntationTableCW;
 }
-/*!
- * @brief Get direction
- * @param[in] commutation - Target Phase
- *
- */
+
 BLDC_DIRECTION_T BLDC_Commutation_GetDirection(BLDC_COMMUTATION_T * commutation)
 {
 	return commutation->Direction;
 }
-/*!
- *@brief Run calibration function
- */
+
 void BLDC_Commutation_MapCommuntationTableRunCalibration
 (	
 	BLDC_COMMUTATION_T * commutation,
@@ -246,9 +215,7 @@ void BLDC_Commutation_MapCommuntationTable
 	commutation->CommuntationTableCCW[indexPhaseCA].ActivatePhase = commutatePhaseAC;
 	commutation->CommuntationTableCCW[indexPhaseCB].ActivatePhase = commutatePhaseBC;
 }
-/*!
- *@brief Set BLDC_Commutation_MapCommuntationTable to default
- */
+
 void BLDC_Commutation_MapCommuntationTableHallDefault
 (	
 	BLDC_COMMUTATION_T * commutation,				
@@ -274,9 +241,7 @@ void BLDC_Commutation_MapCommuntationTableHallDefault
 		 6, 2, 3, 1, 5, 4
 	);
 }
-/*!
- *@brief Set commutation fault pointer
- */
+
 void BLDC_Commutation_MapCommuntationTableFaultStates
 ( 
 	BLDC_COMMUTATION_T * commutation,
@@ -289,9 +254,7 @@ void BLDC_Commutation_MapCommuntationTableFaultStates
 	commutation->CommuntationTableCCW[0].ActivatePhase = fault000;
 	commutation->CommuntationTableCCW[7].ActivatePhase = fault111;
 }
-/*!
- * brief  Initialize commutation function
- */
+
 void BLDC_Commutation_Init
 (
 	BLDC_COMMUTATION_T * commutation,
