@@ -12,49 +12,54 @@
 #include "Speed.h"
 #include "Commutation.h"
 #include "PID.h"
-#include "VoltageDivider.h"
 
 #include <stdbool.h>
 #include <stdint.h>
 
 typedef enum
 {
-	MOTOR_MODE_STANDBY,
-	MOTOR_MODE_STARTUP,
-	MOTOR_MODE_FAULT,
-	MOTOR_MODE_RUN,
-}  MOTOR_MODE_T;
+	MOTOR_STATE_STANDBY,
+	MOTOR_STATE_STARTUP,
+	MOTOR_STATE_FAULT,
+	MOTOR_STATE_RUN,
+}  MOTOR_STATE_T;
 
 typedef struct 
 {
-	MOTOR_MODE_T 	MotorMode;
-	COMMUTATION_T 	* Commutation;
-	SPEED_T 		* Speed;
-	PID_T 			* PID;
-	MONITOR_T 		* Monitor;
+	MOTOR_STATE_T State;
+	BLDC_COMMUTATION_T Commutation;
+	SPEED_T Speed;
+	PID_T PID;
+	//BLDC_ERROR_T Error;
 
-	void(*ShortMotor)(void);
-	void(*FloatMotor)(void);
-	//uint16_t OptimalRegen;
+	//speed->EventPeriod
+	uint32_t PIDOutputHallPeriod;
+	uint32_t PIDSetPointHallPeriod;
 
 	uint16_t PWM;
-	uint16_t PWMMax; // PWM 100% duty cycle value, use monitor for physical speed limit
+	uint32_t TargetRPM;
 
 	uint32_t JogSteps;
-	uint32_t StepCount;
+	uint32_t StepCount; //void BLDC_ResetStepCount(void);
 
-	uint32_t SetRPM;
-	uint32_t RPMMax; //set proportional to max voltage?
 
-	//  speed->EventPeriod
-	//	uint32_t PIDOutputHallPeriod;
-	//	uint32_t PIDSetPointHallPeriod;
-	uint16_t SetVoltage; //desired speed
+	uint8_t IZero_ADCU; // == 125
+
+	uint8_t * BackEMFPhaseA_ADCU;
+	uint8_t * BackEMFPhaseB_ADCU;
+	uint8_t * BackEMFPhaseC_ADCU;
+	uint8_t * VBat_ADCU;
+	uint8_t * I_ADCU;
+	uint8_t * LSTemp_ADCU;
 }
 BLDC_CONTROLLER_T;
 
-void BLDC_ProcessRunPoll(BLDC_CONTROLLER_T * bldc);
-void BLDC_ProcessRunHallISR(BLDC_CONTROLLER_T * bldc);
 
+uint8_t * BLDC_GetPtrBackEMFPhaseA(BLDC_CONTROLLER_T * bldc);
+uint8_t * BLDC_GetPtrBackEMFPhaseB(BLDC_CONTROLLER_T * bldc);
+uint8_t * BLDC_GetPtrBackEMFPhaseC(BLDC_CONTROLLER_T * bldc);
+uint8_t * BLDC_GetPtrVBat(BLDC_CONTROLLER_T * bldc);
+uint8_t * BLDC_GetPtrI(BLDC_CONTROLLER_T * bldc);
+uint8_t * BLDC_GetPtrLSTemp(BLDC_CONTROLLER_T * bldc);
 
 #endif /* BLDC_H_ */
