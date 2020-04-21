@@ -51,6 +51,9 @@ static bool (*ADC_GetCompleteFlag)(void);
 
 //extern void RestoreTrigger(void);
 
+/*!
+ * @brief Save ADC value into MeasureChannelResultBuffer
+ */
 void ADC_ISR(void)
 {
 	uint8_t i;
@@ -72,7 +75,6 @@ void ADC_ISR(void)
 	if (TriggerMode == MEASURE_TRIGGER_ON_HOLD)	// restoring a trigger means it has completed once // can check if queue is empty to prevent restore followed by overwrite by onEndISR
 		Measure_StartADC(MeasureSavedTrigger.SampleGroupChannelSelect, MeasureSavedTrigger.SampleGroupChannelCount, true, MeasureSavedTrigger.ADC_OnEndISR, false);
 }
-
 void ADC_Poll(void)
 {
 	if (ADC_GetConversionCompleteFlag()) ADC_ISR();
@@ -101,6 +103,9 @@ void ADC_Poll(void)
 //	ADC_Set(ADC_SampleGroupChannelSelect, MeasureSavedTrigger.SampleGroupChannelCount, true);	 /*!< Enables interrupt */
 //}
 
+/*!
+ * @brief Save ADC value into MeasureChannelResultBuffer
+ */
 bool Measure_StartADC(MEASURE_CHANNEL_T channels, uint8_t channelCount, bool hwTrigger, void(*onEnd)(void), bool overwrite)
 {
 	uint8_t i;
@@ -204,41 +209,78 @@ bool Measure_StartADC(MEASURE_CHANNEL_T channels, uint8_t channelCount, bool hwT
 //	else					return Measure_SetMeasure(&channels.ChannelSingle, channelCount, triggerMode, onEnd);
 //}
 
+/*!
+ * @brief Trigger measurechannel
+ * @param[in] channel - Target channel
+ * @return
+ */
 bool Measure_TriggerMeasureChannel(uint8_t channel, void(*onEnd)(void))
 {
 	return Measure_StartADC((MEASURE_CHANNEL_T)channel, 1, true, onEnd, true);
 }
-
+/*!
+ * @brief Active measurechannel
+ * @param[in] channel - Target channel
+ * @return
+ */
 bool Measure_StartMeasureChannel(uint8_t channel, void(*onEnd)(void)) //need volatile to avoid pass by register
 {
 	return Measure_StartADC((MEASURE_CHANNEL_T)channel, 1, false, onEnd, true);
 }
-
+/*!
+ * @brief Trigger Measure group
+ * @param[in] channels - Target channels
+ * @param[in] channelCount - channel counter
+ * @return
+ */
 bool Measure_TriggerMeasureSampleGroup(const uint8_t * channels, uint8_t channelCount, void(*onEnd)(void))
 {
 	return Measure_StartADC((MEASURE_CHANNEL_T)channels, channelCount, true, onEnd, true);
 }
-
+/*!
+ * @brief Start Measure group
+ * @param[in] channels - Target channels
+ * @param[in] channelCount - channel counter
+ * @return
+ */
 bool Measure_StartMeasureSampleGroup(const uint8_t * channels, uint8_t channelCount, void(*onEnd)(void))
 {
 	return Measure_StartADC((MEASURE_CHANNEL_T)channels, channelCount, false, onEnd, true);
 }
-
+/*!
+ * @brief Trigger Measure group Overwrite
+ * @param[in] channels - Target channels
+ * @return
+ */
 bool Measure_TriggerMeasureChannelOverwrite(uint8_t channel, void(*onEnd)(void))
 {
 	return Measure_StartADC((MEASURE_CHANNEL_T)channel, 1, true, onEnd, true);
 }
-
+/*!
+ * @brief Start Measure group Overwrite
+ * @param[in] channels - Target channels
+ * @return
+ */
 bool Measure_StartMeasureChannelOverwrite(uint8_t channel, void(*onEnd)(void))
 {
 	return Measure_StartADC((MEASURE_CHANNEL_T)channel, 1, false, onEnd, true);
 }
-
+/*!
+ * @brief Trigger Measure group Overwrite
+ * @param[in] channels - Target channels
+ * @param[in] channelCount - channel counter
+ * @return
+ */
 bool Measure_TriggerMeasureSampleGroupOverwrite(const uint8_t * channels, uint8_t channelCount, void(*onEnd)(void))
 {
 	return Measure_StartADC((MEASURE_CHANNEL_T)channels, channelCount, true, onEnd, true);
 }
-
+/*!
+ * @brief Active Measure group Overwrite
+ * @param[in] channels - Target channels
+ * @param[in] channelCount - channel counter
+ * @return
+ */
 bool Measure_StartMeasureSampleGroupOverwrite(const uint8_t * channels, uint8_t channelCount, void(*onEnd)(void))
 {
 	return Measure_StartADC((MEASURE_CHANNEL_T)channels, channelCount, false, onEnd, true);
@@ -266,12 +308,16 @@ void Measure_SetTriggerSource(uint8_t source)
 {
 
 }
-
+/*!
+ * @brief wait until measure complete
+ */
 void Measure_WaitForResult()
 {
     while (SampleMode != MEASURE_MODE_COMPLETE);
 }
-
+/*!
+ * @brief Disable Measure if trigger disabled
+ */
 void Measure_Disable(void)
 {
 	SampleMode = MEASURE_MODE_COMPLETE;
@@ -285,32 +331,52 @@ void Measure_Disable(void)
 //}
 
 // not really needed since, buffer is provided by user
+
+/*!
+ * @brief save value into MeasureChannelResultBuffer
+ * @parr[in]value - ADC value
+ * @parr[in]channel - Target channel
+ */
 bool Measure_SaveValue(volatile ADC_DATA_T * value, uint8_t channel)
 {
 	if (channel >= ADC_ChannelCount)	return false;
 	*value = MeasureChannelResultBuffer[channel];
 	return true;
 }
-
+/*!
+ * @brief save content of certain address into MeasureChannelResultBuffer
+ * @parr[in]address - ADC address
+ * @parr[in]channel - Target channel
+ */
 bool Measure_MapAddress(volatile ADC_DATA_T ** address, uint8_t channel)
 {
 	if (channel >= ADC_ChannelCount)	return false;
 	*address = &MeasureChannelResultBuffer[channel];
 	return true;
 }
-
+/*!
+ * @brief Get value
+ * @parr[in]channel - Target channel
+ * return MeasureChannelResultBuffer channel content
+ */
 volatile ADC_DATA_T Measure_GetValue(uint8_t channel)
 {
 	if (channel < ADC_ChannelCount)	return MeasureChannelResultBuffer[channel];
 	else 								return 0;
 }
-
+/*!
+ * @brief Get value address
+ * @parr[in]channel - Target channel
+ * return MeasureChannelResultBuffer channel content address
+ */
 volatile ADC_DATA_T * Measure_GetAddress(uint8_t channel)
 {
 	if (channel < ADC_ChannelCount)	return &MeasureChannelResultBuffer[channel];
 	else 							return 0;
 }
-
+/*!
+ * @brief Initialize Measure
+ */
 void Measure_Init
 (
 	uint8_t channelCount,

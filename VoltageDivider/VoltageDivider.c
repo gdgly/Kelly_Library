@@ -59,7 +59,6 @@ void VoltageDivider_Init(VOLTAGE_DIVIDER_T * div, uint32_t r1Ratio, uint32_t r2R
 	div->VPerADCBottom = adcMax*r2Ratio;
 }
 
-/******************************************************************************/
 /*!
  * @brief Calculate voltage from given ADC value
  *
@@ -67,14 +66,12 @@ void VoltageDivider_Init(VOLTAGE_DIVIDER_T * div, uint32_t r1Ratio, uint32_t r2R
  * @param[in] adcRaw - ADC value
  * @return Calculated voltage
  */
-/******************************************************************************/
 
 uint16_t VoltageDivider_GetVoltage(VOLTAGE_DIVIDER_T * div, uint16_t adcRaw)
 {
 	return (adcRaw*div->VPerADCTop)/div->VPerADCBottom; // (adcRaw*VREF*(R1_RATIO+R2_RATIO))/(R2_RATIO*ADC_RES);
 }
 
-/******************************************************************************/
 /*!
  * @brief Calculate voltage from given ADC value
  *
@@ -83,13 +80,11 @@ uint16_t VoltageDivider_GetVoltage(VOLTAGE_DIVIDER_T * div, uint16_t adcRaw)
  * @param[in] precision - number of decimal digits
  * @return Calculated voltage
  */
-/******************************************************************************/
 uint16_t VoltageDivider_GetVoltage10(VOLTAGE_DIVIDER_T * div, uint16_t adcRaw, uint8_t precision)
 {
 	return (adcRaw*div->VPerADCTop*(10^precision))/div->VPerADCBottom;
 }
 
-/******************************************************************************/
 /*!
  * @brief Calculate ADC value from given voltage
  *
@@ -97,7 +92,6 @@ uint16_t VoltageDivider_GetVoltage10(VOLTAGE_DIVIDER_T * div, uint16_t adcRaw, u
  * @param[in] voltage - voltage
  * @return Calculated ADC value
  */
-/******************************************************************************/
 uint16_t VoltageDivider_GetADCRaw(VOLTAGE_DIVIDER_T * div, uint16_t voltage)
 {
 	return (voltage*div->VPerADCBottom)/div->VPerADCTop;
