@@ -54,7 +54,6 @@ typedef struct
 	//from adc // can generalize to adcvalue/convertedvalue/threasholds/errorresponse function/
 
 	//ADC live values map
-	volatile ADC_DATA_T * BackEMFSelect_ADCU;
 	volatile ADC_DATA_T * BackEMFPhaseA_ADCU;
 	volatile ADC_DATA_T * BackEMFPhaseB_ADCU;
 	volatile ADC_DATA_T * BackEMFPhaseC_ADCU;
@@ -63,7 +62,6 @@ typedef struct
 	volatile ADC_DATA_T * LSTemp_ADCU;
 
 	//converted values, use for com Tx
-	uint16_t BackEMFSelect;
 	uint16_t BackEMFPhaseA;
 	uint16_t BackEMFPhaseB;
 	uint16_t BackEMFPhaseC;
@@ -71,8 +69,11 @@ typedef struct
 	uint16_t VBat;
 	uint16_t LSTemp;
 
-	uint16_t BackEMFBuffer_ADCU;
-	uint16_t BackEMF;
+	//volatile ADC_DATA_T * BackEMFSelect_ADCU;
+	uint16_t BackEMFSelectBuffer_ADCU;
+	uint16_t BackEMFSelect;
+
+	//uint16_t BackEMF;
 
 	//	ADC_DATA_T BackEMF_ADCU;
 
@@ -95,8 +96,7 @@ typedef struct
 	//uint16_t * p_RPM;
 
 
-	uint16_t RPM;
-	uint16_t  PWMVoltage;
+
 }
 MONITOR_T;
 

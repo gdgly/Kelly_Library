@@ -139,7 +139,7 @@ void BLDC_PluggingBrake(BLDC_CONTROLLER_T * bldc)
 void BLDC_RegenBrakeOptimal(BLDC_CONTROLLER_T * bldc)
 {
 	//PID_SetSetPoint(pid, bldc->PWM / PWM_MAX * VBatADCU > BackEMFADCU/2);
-	BLDC_SetVoltageADCU(bldc, *bldc->Monitor->BackEMFSelect_ADCU/2); //todo backemf average
+	BLDC_SetVoltageADCU(bldc, bldc->Monitor->BackEMFSelectBuffer_ADCU/2); //todo backemf average
 }
 
 void BLDC_RegenBrake(BLDC_CONTROLLER_T * bldc, uint8_t intensity)

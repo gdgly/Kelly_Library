@@ -24,7 +24,7 @@ static inline bool StartADC(MEASURE_T * measure, MEASURE_CHANNEL_T channels, uin
 	if (channelCount > measure->ADC_SampleChannelCountMax)	return false;
 	if (measure->ADC_GetActiveFlag() && !overwrite)			return false;
 
-	// for modifying measure->ADC_SampleChannels of same measure struct, can occur without calling inside interrupts
+	// for modifying measure->ADC_SampleChannels of same measure struct. can occur without calling inside interrupts, i.e need to be implemented if global is not
 	if (measure->ADC_GetActiveFlag() && overwrite) measure->ADC_DisableIRQ();
 
 	if (DisableIRQ) DisableIRQ(); // need to be implemented if calling from inside interrupts

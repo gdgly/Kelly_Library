@@ -16,9 +16,9 @@
 /******************************************************************************/
 void Speed_InitDelta(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t timerCounterMax, uint32_t timerFreqHz)
 {
-	speed->TimerCounterValue = timerCounterValue;
-	speed->TimerCounterMax = timerCounterMax;
-	speed->TimerCounterFreq = timerFreqHz;
+	speed->TimerCounterValue 	= timerCounterValue;
+	speed->TimerCounterMax 		= timerCounterMax;
+	speed->TimerCounterFreq 	= timerFreqHz;
 }
 
 /******************************************************************************/
@@ -116,7 +116,7 @@ void Speed_ZeroDeltaCount(SPEED_T * speed)
 /*! @} */ // End of Delta submodule
 
 
-
+//todo
 void Speed_DeltaOverflowDetectionISR(SPEED_T * speed)
 {
 	if (*speed->DeltaOverflowTimer - speed->DeltaOverflowTimerSaved > speed->DeltaOverflowTime)
@@ -128,13 +128,14 @@ void Speed_DeltaOverflowDetectionISR(SPEED_T * speed)
 	}
 
 }
+
 void Speed_DeltaOverflowDetectionPoll(SPEED_T * speed)
 {
 	if(speed->DeltaCount - speed->DeltaCountSaved < 2)
 		Speed_DeltaOverflowDetectionISR(speed);
+
+	speed->DeltaCountSaved = speed->DeltaCount;
 }
-
-
 
 void Speed_InitDeltaOverflowDetection(SPEED_T * speed, volatile uint32_t * deltaOverflowTimer)
 {

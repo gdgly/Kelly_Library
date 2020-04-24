@@ -26,16 +26,14 @@ MONITOR_ERROR_T Monitor_ProcessLowPri(MONITOR_T * monitor)
 //convert adc values to voltage for output. call 1 per s?
 void Monitor_Convert(MONITOR_T * monitor)
 {
-	monitor->BackEMF 		= VoltageDivider_GetVoltage(monitor->VDivBackEMF, monitor->BackEMFBuffer_ADCU);
-	monitor->BackEMFSelect 	= VoltageDivider_GetVoltage(monitor->VDivBackEMF, *monitor->BackEMFSelect_ADCU);
+	//monitor->BackEMF 		= VoltageDivider_GetVoltage(monitor->VDivBackEMF, monitor->BackEMFBuffer_ADCU);
+	monitor->BackEMFSelect 	= VoltageDivider_GetVoltage(monitor->VDivBackEMF, monitor->BackEMFSelectBuffer_ADCU);
 	monitor->BackEMFPhaseA 	= VoltageDivider_GetVoltage(monitor->VDivBackEMF, *monitor->BackEMFPhaseA_ADCU);
 	monitor->BackEMFPhaseB 	= VoltageDivider_GetVoltage(monitor->VDivBackEMF, *monitor->BackEMFPhaseB_ADCU);
 	monitor->BackEMFPhaseC 	= VoltageDivider_GetVoltage(monitor->VDivBackEMF, *monitor->BackEMFPhaseC_ADCU);
 	monitor->VBat 			= VoltageDivider_GetVoltage(monitor->VDivBat, 	*monitor->VBat_ADCU);
 	monitor->I 				= monitor->I_ADCU;
 	monitor->LSTemp 		= monitor->LSTemp_ADCU;
-
-
 }
 
 void Monitor_ZeroCurrentSensor(MONITOR_T * monitor)
@@ -46,28 +44,37 @@ void Monitor_ZeroCurrentSensor(MONITOR_T * monitor)
 //ADC_DATA_T Monitor_GetSelectBEMF(MONITOR_T * monitor) { return *monitor->BackEMFSelect_ADCU; }
 
 // select points to phase active during commutation
-void Monitor_SelectBEMFPhaseA(MONITOR_T * monitor) { monitor->BackEMFSelect_ADCU = monitor->BackEMFPhaseA_ADCU; }
-void Monitor_SelectBEMFPhaseB(MONITOR_T * monitor) { monitor->BackEMFSelect_ADCU = monitor->BackEMFPhaseB_ADCU; }
-void Monitor_SelectBEMFPhaseC(MONITOR_T * monitor) { monitor->BackEMFSelect_ADCU = monitor->BackEMFPhaseC_ADCU; }
-void Monitor_SelectBEMFBuffer(MONITOR_T * monitor) { monitor->BackEMFSelect_ADCU = &monitor->BackEMFBuffer_ADCU; }
+//void Monitor_SelectBEMFPhaseA(MONITOR_T * monitor) { monitor->BackEMFSelect_ADCU = monitor->BackEMFPhaseA_ADCU; }
+//void Monitor_SelectBEMFPhaseB(MONITOR_T * monitor) { monitor->BackEMFSelect_ADCU = monitor->BackEMFPhaseB_ADCU; }
+//void Monitor_SelectBEMFPhaseC(MONITOR_T * monitor) { monitor->BackEMFSelect_ADCU = monitor->BackEMFPhaseC_ADCU; }
+//void Monitor_SelectBEMFBuffer(MONITOR_T * monitor) { monitor->BackEMFSelect_ADCU = &monitor->BackEMFSelectBuffer_ADCU; } //no select
+//void Monitor_CaptureBEMFSelect(MONITOR_T * monitor) { if (*monitor->BackEMFSelect_ADCU > 0) monitor->BackEMFSelectBuffer_ADCU = *monitor->BackEMFSelect_ADCU; }
 
-void Monitor_CaptureBEMFPhaseA(MONITOR_T * monitor) { if (*monitor->BackEMFPhaseA_ADCU > 0) monitor->BackEMFBuffer_ADCU = *monitor->BackEMFPhaseA_ADCU; }
-void Monitor_CaptureBEMFPhaseB(MONITOR_T * monitor) { if (*monitor->BackEMFPhaseB_ADCU > 0) monitor->BackEMFBuffer_ADCU = *monitor->BackEMFPhaseB_ADCU; }
-void Monitor_CaptureBEMFPhaseC(MONITOR_T * monitor) { if (*monitor->BackEMFPhaseC_ADCU > 0) monitor->BackEMFBuffer_ADCU = *monitor->BackEMFPhaseC_ADCU; }
 
-void Monitor_CaptureBEMF(MONITOR_T * monitor)
-{
-	if (*monitor->BackEMFPhaseA_ADCU >= *monitor->BackEMFPhaseB_ADCU && *monitor->BackEMFPhaseA_ADCU >= *monitor->BackEMFPhaseC_ADCU)
-		monitor->BackEMFBuffer_ADCU = *monitor->BackEMFPhaseA_ADCU;
+//capture with filter
+void Monitor_CaptureFilterBEMFPhaseA(MONITOR_T * monitor) { if (*monitor->BackEMFPhaseA_ADCU > 0) monitor->BackEMFSelectBuffer_ADCU = *monitor->BackEMFPhaseA_ADCU; }
+void Monitor_CaptureFilterBEMFPhaseB(MONITOR_T * monitor) { if (*monitor->BackEMFPhaseB_ADCU > 0) monitor->BackEMFSelectBuffer_ADCU = *monitor->BackEMFPhaseB_ADCU; }
+void Monitor_CaptureFilterBEMFPhaseC(MONITOR_T * monitor) { if (*monitor->BackEMFPhaseC_ADCU > 0) monitor->BackEMFSelectBuffer_ADCU = *monitor->BackEMFPhaseC_ADCU; }
+void Monitor_ZeroCaptureFilterBEMF(MONITOR_T * monitor) { monitor->BackEMFSelectBuffer_ADCU = 0; }
 
-	else if (*monitor->BackEMFPhaseB_ADCU >= *monitor->BackEMFPhaseA_ADCU && *monitor->BackEMFPhaseB_ADCU >= *monitor->BackEMFPhaseC_ADCU)
-		monitor->BackEMFBuffer_ADCU = *monitor->BackEMFPhaseB_ADCU;
+void Monitor_CaptureBEMFPhaseA(MONITOR_T * monitor) { monitor->BackEMFSelectBuffer_ADCU = *monitor->BackEMFPhaseA_ADCU; }
+void Monitor_CaptureBEMFPhaseB(MONITOR_T * monitor) { monitor->BackEMFSelectBuffer_ADCU = *monitor->BackEMFPhaseB_ADCU; }
+void Monitor_CaptureBEMFPhaseC(MONITOR_T * monitor) { monitor->BackEMFSelectBuffer_ADCU = *monitor->BackEMFPhaseC_ADCU; }
 
-	else if (*monitor->BackEMFPhaseC_ADCU >= *monitor->BackEMFPhaseA_ADCU && *monitor->BackEMFPhaseC_ADCU >= *monitor->BackEMFPhaseB_ADCU)
-		monitor->BackEMFBuffer_ADCU = *monitor->BackEMFPhaseC_ADCU;
 
-//	return monitor->BackEMFBuffer_ADCU;
-}
+//void Monitor_CaptureBEMF(MONITOR_T * monitor)
+//{
+//	if (*monitor->BackEMFPhaseA_ADCU >= *monitor->BackEMFPhaseB_ADCU && *monitor->BackEMFPhaseA_ADCU >= *monitor->BackEMFPhaseC_ADCU)
+//		monitor->BackEMFBuffer_ADCU = *monitor->BackEMFPhaseA_ADCU;
+//
+//	else if (*monitor->BackEMFPhaseB_ADCU >= *monitor->BackEMFPhaseA_ADCU && *monitor->BackEMFPhaseB_ADCU >= *monitor->BackEMFPhaseC_ADCU)
+//		monitor->BackEMFBuffer_ADCU = *monitor->BackEMFPhaseB_ADCU;
+//
+//	else if (*monitor->BackEMFPhaseC_ADCU >= *monitor->BackEMFPhaseA_ADCU && *monitor->BackEMFPhaseC_ADCU >= *monitor->BackEMFPhaseB_ADCU)
+//		monitor->BackEMFBuffer_ADCU = *monitor->BackEMFPhaseC_ADCU;
+//
+////	return monitor->BackEMFBuffer_ADCU;
+//}
 
 //void BLDC_CalculateBEMFAvg(BLDC_CONTROLLER_T * bldc, uint8_t backEMF_ADCU)
 //{
@@ -103,7 +110,7 @@ void Monitor_MapADC
 	ADC_DATA_T * temp_ADCU
 )
 {
-	monitor->BackEMFSelect_ADCU = backEMFPhaseA_ADCU;
+	//monitor->BackEMFSelect_ADCU = backEMFPhaseA_ADCU;
 	monitor->BackEMFPhaseA_ADCU = backEMFPhaseA_ADCU;
 	monitor->BackEMFPhaseB_ADCU = backEMFPhaseB_ADCU;
 	monitor->BackEMFPhaseC_ADCU = backEMFPhaseC_ADCU;
@@ -127,8 +134,6 @@ void Monitor_Init
 )
 {
 	Monitor_ZeroCurrentSensor(monitor);
-
-	monitor->BackEMFSelect_ADCU = monitor->BackEMFPhaseA_ADCU;
 
 	Monitor_MapADC
 	(

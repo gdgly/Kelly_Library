@@ -32,12 +32,12 @@ void Commutation_SetPhasePWM(COMMUTATION_T * commutation, uint16_t pwm)
 	commutation->CommuntationTable[commutation->GetHallState()].SetPhasePWM(pwm);
 }
 
-//void (*BLDC_Commutation_GetFunctionActivatePhase(BLDC_COMMUTATION_T * commutation))(uint16_t)
+//void (*Commutation_GetFunctionActivatePhase(COMMUTATION_T * commutation))(uint16_t)
 //{
 //	return commutation->CommuntationTable[commutation->GetHallState()].ActivatePhase;
 //}
 //
-//void (*BLDC_Commutation_GetFunctionSetPhasePWM(BLDC_COMMUTATION_T * commutation))(uint16_t)
+//void (*Commutation_GetFunctionSetPhasePWM(COMMUTATION_T * commutation))(uint16_t)
 //{
 //	return commutation->CommuntationTable[commutation->GetHallState()].SetPhasePWM;
 //}

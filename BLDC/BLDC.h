@@ -43,13 +43,12 @@ typedef struct
 	uint32_t JogSteps;
 	uint32_t StepCount;
 
-	uint32_t SetRPM;
+	uint16_t RPM;
+	uint32_t SetPointRPM;
 	uint32_t RPMMax; //set proportional to max voltage?
 
-	//  speed->EventPeriod
-	//	uint32_t PIDOutputHallPeriod;
-	//	uint32_t PIDSetPointHallPeriod;
-	uint16_t SetVoltage; //desired speed
+	uint16_t SetPointVoltage; //desired speed
+	uint16_t PWMVoltage;
 }
 BLDC_CONTROLLER_T;
 
