@@ -37,17 +37,17 @@ typedef struct
 	void(*FloatMotor)(void);
 	//uint16_t OptimalRegen;
 
-	uint16_t PWM;
+	uint32_t PWM;
 	uint16_t PWMMax; // PWM 100% duty cycle value, use monitor for physical speed limit
 
 	uint32_t JogSteps;
 	uint32_t StepCount;
 
-	uint16_t RPM;
+	uint32_t RPM;
 	uint32_t SetPointRPM;
 	uint32_t RPMMax; //set proportional to max voltage?
 
-	uint16_t SetPointVoltage; //desired speed
+	uint32_t SetPointVoltage; //desired speed
 	uint16_t PWMVoltage;
 }
 BLDC_CONTROLLER_T;

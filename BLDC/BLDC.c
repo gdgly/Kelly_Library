@@ -110,7 +110,8 @@ uint16_t BLDC_GetPWMVoltage(BLDC_CONTROLLER_T * bldc)
 void BLDC_Start(BLDC_CONTROLLER_T * bldc)
 {
 	bldc->MotorMode = MOTOR_MODE_RUN;
-	Commutation_ISR(bldc->Commutation, bldc->PWM); // for case where motor spins to same hall state as last commutation step
+	Commutation_ISR(bldc->Commutation, bldc->PWM);
+	//Speed_ResetTimer(bldc->Speed);
 }
 
 void BLDC_Stop(BLDC_CONTROLLER_T * bldc)
@@ -178,6 +179,8 @@ void BLDC_Init
 	bldc->FloatMotor = floatMotor;
 	bldc->ShortMotor = shortMotor;
 	bldc->MotorMode	= MOTOR_MODE_STANDBY;
+
+	bldc->RPM = 0;
 }
 
 

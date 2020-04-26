@@ -19,7 +19,7 @@ typedef struct
 	volatile uint32_t * DeltaOverflowTimer; //overflow timer in millis
 	volatile uint32_t DeltaOverflowTimerSaved;
 	uint32_t DeltaOverflowTime;
-	volatile uint32_t DeltaCountSaved;
+	//volatile uint32_t DeltaCountSaved;
 
 	uint32_t DistancePerSignal;			/*!< User defined */
 	uint32_t DistanceTimerFreq;			/*!< (DistancePerDelta * TimerFreq) */

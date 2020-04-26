@@ -13,7 +13,7 @@
 // Must be called in intervals of designated sample time
 bool Compute(PID_T * pid)
 {
-	int32_t error = *pid->SetPoint - *pid->Input;
+	int32_t error = (int32_t)*pid->SetPoint - (int32_t)*pid->Input;
 	int32_t output = 0;
 
 	int32_t proportional, intergral, derivative;
@@ -25,7 +25,7 @@ bool Compute(PID_T * pid)
 
 	//	if 		((pid->KiFactor * pid->IntergralSum * pid->SampleTime / pid->TimerFreq / pid->KiDivisor) > pid->OutMax) pid->IntergralSum = pid->OutMax;
 
-	output += 	(pid->KpFactor * error / pid->KpDivisor);
+	output = (pid->KpFactor * error / pid->KpDivisor) + 50;
 
 //	proportional = (pid->KpFactor * error / pid->KpDivisor);
 //	if 		(proportional > pid->OutMax) proportional = pid->OutMax;

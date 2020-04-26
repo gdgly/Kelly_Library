@@ -19,6 +19,7 @@ void Speed_InitDelta(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t tim
 	speed->TimerCounterValue 	= timerCounterValue;
 	speed->TimerCounterMax 		= timerCounterMax;
 	speed->TimerCounterFreq 	= timerFreqHz;
+	speed->TimerCounterValueSaved = *speed->TimerCounterValue;
 }
 
 /******************************************************************************/
@@ -35,13 +36,6 @@ inline void Speed_CaptureDeltaISR(SPEED_T * speed)
 		speed->Delta = speed->TimerCounterMax - speed->TimerCounterValueSaved + *speed->TimerCounterValue;
 	else
 		speed->Delta = *speed->TimerCounterValue - speed->TimerCounterValueSaved;
-
-//	if (*speed->TimerCounterValue > speed->TimerCounterValueSaved)
-//		speed->Delta = *speed->TimerCounterValue - speed->TimerCounterValueSaved;
-//	else if (*speed->TimerCounterValue < speed->TimerCounterValueSaved) // TimerCounter overflow
-//		speed->Delta = speed->TimerCounterMax - speed->TimerCounterValueSaved + *speed->TimerCounterValue;
-//	else  // == 0
-//		return;
 
 	speed->TimerCounterValueSaved = *speed->TimerCounterValue;
 
@@ -69,7 +63,7 @@ volatile uint32_t * Speed_GetPtrDelta(SPEED_T * speed)
 	return &speed->Delta;
 }
 
-uint32_t Speed_GetDeltaTicks(SPEED_T * speed) // unit in timer ticks
+uint32_t Speed_GetDelta(SPEED_T * speed) // unit in timer ticks
 {
 	return speed->Delta;
 }
@@ -93,16 +87,28 @@ uint32_t Speed_GetDeltaFreq(SPEED_T * speed) // unit in Hz
 	else					return speed->TimerCounterFreq / speed->Delta;
 }
 
+uint32_t Speed_GetDeltaFreq255(SPEED_T * speed) // 256 per cycle
+{
+	if (speed->Delta == 0)	return 0;
+	else					return speed->TimerCounterFreq * 255 / speed->Delta;
+}
+
+uint32_t Speed_GetDeltaFreq384(SPEED_T * speed) // 384 per cycle
+{
+	if (speed->Delta == 0)	return 0;
+	else					return speed->TimerCounterFreq * 383 / speed->Delta;
+}
+
 uint32_t Speed_GetDeltaFreqCPM(SPEED_T * speed) // unit in cycles per minute
 {
 	if (speed->Delta == 0)	return 0;
 	else					return speed->TimerCounterFreq * 60 / speed->Delta;
 }
 
-//uint32_t Speed_ResetTimer(SPEED_T * speed)
-//{
-//	speed->TimerCounterValueSaved = *speed->TimerCounterValue;
-//}
+uint32_t Speed_ResetTimer(SPEED_T * speed)
+{
+	speed->TimerCounterValueSaved = *speed->TimerCounterValue;
+}
 
 uint32_t Speed_GetDeltaCount(SPEED_T * speed)
 {
@@ -115,36 +121,58 @@ void Speed_ZeroDeltaCount(SPEED_T * speed)
 }
 /*! @} */ // End of Delta submodule
 
-
-//todo
-void Speed_DeltaOverflowDetectionISR(SPEED_T * speed)
-{
-	if (*speed->DeltaOverflowTimer - speed->DeltaOverflowTimerSaved > speed->DeltaOverflowTime)
-	{
-		speed->DeltaOverflowTimerSaved = *speed->DeltaOverflowTimer;
-
-		speed->Delta = 0;
-		//speed->Delta = speed->Delta + (*speed->DeltaOverflowTimer - speed->DeltaOverflowTimerSaved) * speed->TimerCounterMax / speed->DeltaOverflowTime;
-	}
-
-}
-
-void Speed_DeltaOverflowDetectionPoll(SPEED_T * speed)
-{
-	if(speed->DeltaCount - speed->DeltaCountSaved < 2)
-		Speed_DeltaOverflowDetectionISR(speed);
-
-	speed->DeltaCountSaved = speed->DeltaCount;
-}
-
 void Speed_InitDeltaOverflowDetection(SPEED_T * speed, volatile uint32_t * deltaOverflowTimer)
 {
-	speed->DeltaOverflowTimer = deltaOverflowTimer;
-
-	speed->DeltaOverflowTime = speed->TimerCounterMax * 1000 / speed->TimerCounterFreq;
+	speed->DeltaOverflowTimer 	= deltaOverflowTimer;
+	speed->DeltaOverflowTime 	= speed->TimerCounterMax * 1000 / speed->TimerCounterFreq;
+	speed->DeltaOverflowTimerSaved = *speed->DeltaOverflowTimer;
 }
 
+//todo
+//if time between polls exceeds speed->DeltaOverflowTime invalidate Delta
+//inline void Speed_DeltaOverflowDetectionISR(SPEED_T * speed)
+//{
+//	if (*speed->DeltaOverflowTimer - speed->DeltaOverflowTimerSaved > speed->DeltaOverflowTime)
+//	{
+//		speed->TimerCounterValueSaved = *speed->TimerCounterValue;
+//		speed->Delta = 0;
+//		//speed->Delta = speed->Delta + (*speed->DeltaOverflowTimer - speed->DeltaOverflowTimerSaved) * speed->TimerCounterMax / speed->DeltaOverflowTime;
+//	}
+//
+//	speed->DeltaOverflowTimerSaved = *speed->DeltaOverflowTimer;
+//}
 
+//void Speed_DeltaOverflowDetectionPoll(SPEED_T * speed, bool reference)
+//{
+//	if (reference && !speed->ReferenceSignalSaved) // rising edge detect
+//		Speed_DeltaOverflowDetectionISR(speed);
+//
+//	speed->ReferenceSignalSaved = reference; //split capture reference
+//}
+
+void Speed_CaptureLongDeltaPoll(SPEED_T * speed, bool reference)
+{
+	if (reference && !speed->ReferenceSignalSaved) // rising edge detect
+	{
+		Speed_CaptureDeltaISR(speed);
+		if (*speed->DeltaOverflowTimer - speed->DeltaOverflowTimerSaved > speed->DeltaOverflowTime)
+		{
+			speed->Delta = speed->Delta + speed->TimerCounterMax * ((*speed->DeltaOverflowTimer - speed->DeltaOverflowTimerSaved) / speed->DeltaOverflowTime);
+		}
+
+		speed->DeltaOverflowTimerSaved = *speed->DeltaOverflowTimer;
+	}
+	else //falling edge or no changes
+	{
+		// speed->DeltaOverflowTimerSaved only resets on rising edge
+		if (*speed->DeltaOverflowTimer - speed->DeltaOverflowTimerSaved > speed->DeltaOverflowTime)
+		{
+			speed->TimerCounterValueSaved = *speed->TimerCounterValue;
+			speed->Delta = 0;
+		}
+	}
+	speed->ReferenceSignalSaved = reference;
+}
 
 /******************************************************************************/
 /*!
@@ -248,6 +276,12 @@ uint32_t Speed_GetRotarySpeed(SPEED_T * speed) // Revolution per Second
 {
 	if (speed->Delta == 0)	return 0;
 	return speed->RevolutionsTimerFreq / speed->Delta; // (speed->TimerFreq/pulsePerRevolution) / speed->DeltaPeriod;
+}
+
+uint32_t Speed_GetRotarySpeed8(SPEED_T * speed) // Revolution per Second
+{
+	if (speed->Delta == 0)	return 0;
+	return speed->RevolutionsTimerFreq * 255 / speed->Delta; // (speed->TimerFreq/pulsePerRevolution) / speed->DeltaPeriod;
 }
 
 uint32_t Speed_GetRotarySpeedRPM(SPEED_T * speed)
