@@ -11,7 +11,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define INVERSE_HALL(hall) (~hall&0x07)
+#define INVERSE_HALL(hall) ((~hall)&0x07)
 
 typedef enum
 {
@@ -40,45 +40,17 @@ typedef struct
 typedef struct 
 {
 	volatile COMMUTATION_DIRECTION_T Direction; 
-	//PhaseID?
 	uint8_t (*GetHallState)(void);	//HALL_SENSOR_T (*GetHallSensors)(void);	//CommuntationTableSelect[(uint8_t)hall](pwm);
 	uint8_t SavedHallState;
 	
-	COMMUTATION_PHASE_T * CommuntationTable;
-	COMMUTATION_PHASE_T CommuntationTableCW[8];
-	COMMUTATION_PHASE_T CommuntationTableCCW[8];
+	//COMMUTATION_PHASE_T * CommuntationTable;
+	//COMMUTATION_PHASE_T CommuntationTableCW[8];
+	//COMMUTATION_PHASE_T CommuntationTableCCW[8];
+	COMMUTATION_PHASE_T CommuntationTable[8];
 
 	//add in between steps improve resolution, reduce speed, for stepper mode drive
 	//BLDC_COMMUTATION_PHASE_T CommuntationTableStepper[8][2];
-	
-	//union
-//	{
-//		struct 
-//		{
-		//	BLDC_COMMUTATION_PHASE_T CommutationPhaseAB;
-		//	BLDC_COMMUTATION_PHASE_T CommutationPhaseAC;
-		//	BLDC_COMMUTATION_PHASE_T CommutationPhaseBC;
-		//	BLDC_COMMUTATION_PHASE_T CommutationPhaseBA;
-		//	BLDC_COMMUTATION_PHASE_T CommutationPhaseCA;
-		//	BLDC_COMMUTATION_PHASE_T CommutationPhaseCB;
-//		}
-//		struct 
-//		{
-		//	BLDC_COMMUTATION_PHASE_T CommutationPhaseA;
-		//	BLDC_COMMUTATION_PHASE_T CommutationPhaseB;
-		//	BLDC_COMMUTATION_PHASE_T CommutationPhaseC;
-		//set combined phase functions in module, individual phases also need disable function
-		//might need high low functions, if using individual FET control.
-//		}
-//	}
-	
-//	BLDC_COMMUTATION_PHASE_T CommutationPhaseAB;
-//	BLDC_COMMUTATION_PHASE_T CommutationPhaseAC;
-//	BLDC_COMMUTATION_PHASE_T CommutationPhaseBC;
-//	BLDC_COMMUTATION_PHASE_T CommutationPhaseBA;
-//	BLDC_COMMUTATION_PHASE_T CommutationPhaseCA;
-//	BLDC_COMMUTATION_PHASE_T CommutationPhaseCB;
-	
+
 //	void (*CommuntationTable)(uint8_t);
 //	void (*CommuntationTableCW[8])(uint8_t);
 //	void (*CommuntationTableCCW[8])(uint8_t);
@@ -94,7 +66,7 @@ COMMUTATION_T;
 
 extern void Commutation_ISR(COMMUTATION_T * commutation, uint16_t pwm);
 bool Commutation_Poll(COMMUTATION_T * commutation, uint16_t pwm);
-void Commutation_SetPhasePWM(COMMUTATION_T * commutation, uint16_t pwm);
+//void Commutation_SetPhasePWM(COMMUTATION_T * commutation, uint16_t pwm);
 //void (*BLDC_Commutation_GetFunctionActivatePhase(COMMUTATION_T * commutation))(uint16_t);
 //void (*BLDC_Commutation_GetFunctionSetPhasePWM(COMMUTATION_T * commutation))(uint16_t);
 void Commutation_SetDirection(COMMUTATION_T * commutation, COMMUTATION_DIRECTION_T dir);
@@ -108,12 +80,12 @@ void Commutation_MapCommuntationTableRunCalibration
 	uint8_t * returnIndexBA,
 	uint8_t * returnIndexCA,
 	uint8_t * returnIndexCB,
-	void (*setPWMPhaseAB)(uint16_t),
-	void (*setPWMPhaseAC)(uint16_t),
-	void (*setPWMPhaseBC)(uint16_t),
-	void (*setPWMPhaseBA)(uint16_t),
-	void (*setPWMPhaseCA)(uint16_t),
-	void (*setPWMPhaseCB)(uint16_t),
+//	void (*setPWMPhaseAB)(uint16_t),
+//	void (*setPWMPhaseAC)(uint16_t),
+//	void (*setPWMPhaseBC)(uint16_t),
+//	void (*setPWMPhaseBA)(uint16_t),
+//	void (*setPWMPhaseCA)(uint16_t),
+//	void (*setPWMPhaseCB)(uint16_t),
 	void (*commutatePhaseAB)(uint16_t),
 	void (*commutatePhaseAC)(uint16_t),
 	void (*commutatePhaseBC)(uint16_t),
@@ -121,7 +93,7 @@ void Commutation_MapCommuntationTableRunCalibration
 	void (*commutatePhaseCA)(uint16_t),
 	void (*commutatePhaseCB)(uint16_t),
 	uint16_t pwm,
-	void (*enablePhaseABC)(void),
+	void (*enablePhaseABC)(bool enA, bool enB, bool enC),
 	void (*delay)(uint32_t),
 	uint32_t delayTime
 );
@@ -129,12 +101,12 @@ void Commutation_MapCommuntationTableRunCalibration
 void Commutation_MapCommuntationTable
 (	
 	COMMUTATION_T * commutation,				
-	void (*setPWMPhaseAB)(uint16_t),
-	void (*setPWMPhaseAC)(uint16_t),
-	void (*setPWMPhaseBC)(uint16_t),
-	void (*setPWMPhaseBA)(uint16_t),
-	void (*setPWMPhaseCA)(uint16_t),
-	void (*setPWMPhaseCB)(uint16_t),
+//	void (*setPWMPhaseAB)(uint16_t),
+//	void (*setPWMPhaseAC)(uint16_t),
+//	void (*setPWMPhaseBC)(uint16_t),
+//	void (*setPWMPhaseBA)(uint16_t),
+//	void (*setPWMPhaseCA)(uint16_t),
+//	void (*setPWMPhaseCB)(uint16_t),
 	void (*commutatePhaseAB)(uint16_t),
 	void (*commutatePhaseAC)(uint16_t),
 	void (*commutatePhaseBC)(uint16_t),
@@ -152,14 +124,14 @@ void Commutation_MapCommuntationTable
 void Commutation_Init
 (
 	COMMUTATION_T * commutation,
-	COMMUTATION_DIRECTION_T dir,
+//	COMMUTATION_DIRECTION_T dir,
 	uint8_t (*getHallSensors)(void),
-	void (*setPWMPhaseAB)(uint16_t),
-	void (*setPWMPhaseAC)(uint16_t),
-	void (*setPWMPhaseBC)(uint16_t),
-	void (*setPWMPhaseBA)(uint16_t),
-	void (*setPWMPhaseCA)(uint16_t),
-	void (*setPWMPhaseCB)(uint16_t),
+//	void (*setPWMPhaseAB)(uint16_t),
+//	void (*setPWMPhaseAC)(uint16_t),
+//	void (*setPWMPhaseBC)(uint16_t),
+//	void (*setPWMPhaseBA)(uint16_t),
+//	void (*setPWMPhaseCA)(uint16_t),
+//	void (*setPWMPhaseCB)(uint16_t),
 	void (*commutatePhaseAB)(uint16_t),
 	void (*commutatePhaseAC)(uint16_t),
 	void (*commutatePhaseBC)(uint16_t),
