@@ -57,7 +57,7 @@ WAVEFORM_MODE_T WaveformMode;
 static bool SinusoidalModulation;
 
 volatile static uint32_t * HallTimerDelta;
-static uint32_t AngularSpeedTime; // (384*TimerCounterFreq/ISRFreq)
+static uint32_t AngularSpeedTime; // (384*HallTimerFreq/ISRFreq)
 static uint32_t PWMHalfDuty;
 
 volatile static uint16_t Angle;
@@ -85,7 +85,6 @@ void Waveform_ModulateAngleISR(uint16_t pwm, bool direction)
 	ISRCount++;
 
 	if (AngleOffset > 64) AngleOffset = 64; // angle offset range of 0-64, should not exceed before commutation
-
 
 	uint8_t sineFactorA;
 	uint8_t sineFactorB;
@@ -161,6 +160,7 @@ void Waveform_Init
 )
 {
 	WaveformMode = WAVEFORM_MODE_UNIPOLAR1_T;
+	SinusoidalModulation = false;
 
 	SetPWMVal = setPWMVal;
 	EnablePWM = enablePWM;
