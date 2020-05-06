@@ -32,7 +32,7 @@ typedef enum
 
 typedef struct 
 {
-	void (*SetPhasePWM)(uint16_t pwm);
+//	void (*SetPhasePWM)(uint16_t pwm);
 	void (*ActivatePhase)(uint16_t pwm);
 	//PhaseID?
 } COMMUTATION_PHASE_T;
@@ -92,6 +92,7 @@ void Commutation_MapCommuntationTableRunCalibration
 	void (*commutatePhaseBA)(uint16_t),
 	void (*commutatePhaseCA)(uint16_t),
 	void (*commutatePhaseCB)(uint16_t),
+	void (*setPWMPhaseABC)(uint16_t pwmA, uint16_t pwmB, uint16_t pwmC),
 	uint16_t pwm,
 	void (*enablePhaseABC)(bool enA, bool enB, bool enC),
 	void (*delay)(uint32_t),

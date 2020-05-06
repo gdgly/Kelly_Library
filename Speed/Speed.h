@@ -22,7 +22,7 @@ typedef struct
 	//volatile uint32_t DeltaCountSaved;
 
 	uint32_t DistancePerSignal;			/*!< User defined */
-	uint32_t DistanceTimerFreq;			/*!< (DistancePerDelta * TimerFreq) */
+	uint32_t DistanceTimerFreq;			/*!< (DistancePerSignal * TimerFreq) */
 
 	uint16_t PulsePerRevolution;		/*!< User defined */
 	uint16_t DistancePerRevolution;		/*!< User defined */
@@ -38,10 +38,71 @@ typedef struct
 }
 SPEED_T;
 
+/******************************************************************************/
+/*!
+ * @brief	Call from event interrupt to record time sample
+ *
+ * e.g. call each hall cycle / electric rotation inside hall edge interrupt
+ * Interval cannot be greater than TimerCounterMax [ticks] i.e. (TimerFreq * TimerCounterMax) [seconds]
+ */
+/******************************************************************************/
+static inline void Speed_CaptureDeltaISR(SPEED_T * speed)
+{
+	if (*speed->TimerCounterValue < speed->TimerCounterValueSaved) // TimerCounter overflow
+		speed->Delta = speed->TimerCounterMax - speed->TimerCounterValueSaved + *speed->TimerCounterValue;
+	else
+		speed->Delta = *speed->TimerCounterValue - speed->TimerCounterValueSaved;
 
-extern void Speed_CaptureDeltaISR(SPEED_T * speed);
+	speed->TimerCounterValueSaved = *speed->TimerCounterValue;
 
-void Speed_CaptureDeltaPoll(SPEED_T * speed, bool reference);
+	speed->DeltaCount++;
+}
+
+/******************************************************************************/
+/*!
+ * @brief	Poll from main loop if event interrupt is not available.
+ *
+ * e.g. give 1 hall edge for reference
+ */
+/******************************************************************************/
+static inline void Speed_CaptureDeltaPoll(SPEED_T * speed, bool reference)
+{
+	//if (reference - speed->ReferenceSignalSaved) // rising edge detect
+	if (reference && !speed->ReferenceSignalSaved) // rising edge detect
+		Speed_CaptureDeltaISR(speed);
+
+	speed->ReferenceSignalSaved = reference;
+}
+
+/******************************************************************************/
+/*!
+ * @brief	Extend base timer using millis timer.
+ */
+/******************************************************************************/
+static inline void Speed_CaptureLongDeltaPoll(SPEED_T * speed, bool reference)
+{
+	if (reference && !speed->ReferenceSignalSaved) // rising edge detect
+	{
+		Speed_CaptureDeltaISR(speed);
+		if (*speed->DeltaOverflowTimer - speed->DeltaOverflowTimerSaved > speed->DeltaOverflowTime)
+		{
+			speed->Delta = speed->Delta + speed->TimerCounterMax * ((*speed->DeltaOverflowTimer - speed->DeltaOverflowTimerSaved) / speed->DeltaOverflowTime);
+		}
+
+		speed->DeltaOverflowTimerSaved = *speed->DeltaOverflowTimer;
+	}
+	else //falling edge or no changes
+	{
+		// speed->DeltaOverflowTimerSaved only resets on rising edge
+		if (*speed->DeltaOverflowTimer - speed->DeltaOverflowTimerSaved > speed->DeltaOverflowTime)
+		{
+			speed->TimerCounterValueSaved = *speed->TimerCounterValue;
+			speed->Delta = 0;
+		}
+	}
+	speed->ReferenceSignalSaved = reference;
+}
+
 volatile uint32_t * Speed_GetPtrDelta(SPEED_T * speed);
 uint32_t Speed_GetDeltaRaw(SPEED_T * speed);
 uint32_t Speed_GetDeltaMillis(SPEED_T * speed);

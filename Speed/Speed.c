@@ -22,42 +22,6 @@ void Speed_InitDelta(SPEED_T * speed, uint32_t * timerCounterValue, uint32_t tim
 	speed->TimerCounterValueSaved = *speed->TimerCounterValue;
 }
 
-/******************************************************************************/
-/*!
- * @brief	Call from event interrupt to record time sample
- *
- * e.g. call each hall cycle / electric rotation inside hall edge interrupt
- * Interval cannot be greater than TimerCounterMax [ticks] i.e. (TimerFreq * TimerCounterMax) [seconds]
- */
-/******************************************************************************/
-inline void Speed_CaptureDeltaISR(SPEED_T * speed)
-{
-	if (*speed->TimerCounterValue < speed->TimerCounterValueSaved) // TimerCounter overflow
-		speed->Delta = speed->TimerCounterMax - speed->TimerCounterValueSaved + *speed->TimerCounterValue;
-	else
-		speed->Delta = *speed->TimerCounterValue - speed->TimerCounterValueSaved;
-
-	speed->TimerCounterValueSaved = *speed->TimerCounterValue;
-
-	speed->DeltaCount++;
-}
-
-/******************************************************************************/
-/*!
- * @brief	Poll from main loop if event interrupt is not available.
- *
- * e.g. give 1 hall edge for reference
- */
-/******************************************************************************/
-void Speed_CaptureDeltaPoll(SPEED_T * speed, bool reference)
-{
-	//if (reference - speed->ReferenceSignalSaved) // rising edge detect
-	if (reference && !speed->ReferenceSignalSaved) // rising edge detect
-		Speed_CaptureDeltaISR(speed);
-
-	speed->ReferenceSignalSaved = reference;
-}
-
 volatile uint32_t * Speed_GetPtrDelta(SPEED_T * speed)
 {
 	return &speed->Delta;
@@ -121,6 +85,7 @@ void Speed_ZeroDeltaCount(SPEED_T * speed)
 }
 /*! @} */ // End of Delta submodule
 
+
 void Speed_InitDeltaOverflowDetection(SPEED_T * speed, volatile uint32_t * deltaOverflowTimer)
 {
 	speed->DeltaOverflowTimer 	= deltaOverflowTimer;
@@ -150,29 +115,7 @@ void Speed_InitDeltaOverflowDetection(SPEED_T * speed, volatile uint32_t * delta
 //	speed->ReferenceSignalSaved = reference; //split capture reference
 //}
 
-void Speed_CaptureLongDeltaPoll(SPEED_T * speed, bool reference)
-{
-	if (reference && !speed->ReferenceSignalSaved) // rising edge detect
-	{
-		Speed_CaptureDeltaISR(speed);
-		if (*speed->DeltaOverflowTimer - speed->DeltaOverflowTimerSaved > speed->DeltaOverflowTime)
-		{
-			speed->Delta = speed->Delta + speed->TimerCounterMax * ((*speed->DeltaOverflowTimer - speed->DeltaOverflowTimerSaved) / speed->DeltaOverflowTime);
-		}
 
-		speed->DeltaOverflowTimerSaved = *speed->DeltaOverflowTimer;
-	}
-	else //falling edge or no changes
-	{
-		// speed->DeltaOverflowTimerSaved only resets on rising edge
-		if (*speed->DeltaOverflowTimer - speed->DeltaOverflowTimerSaved > speed->DeltaOverflowTime)
-		{
-			speed->TimerCounterValueSaved = *speed->TimerCounterValue;
-			speed->Delta = 0;
-		}
-	}
-	speed->ReferenceSignalSaved = reference;
-}
 
 /******************************************************************************/
 /*!
