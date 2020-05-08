@@ -233,7 +233,7 @@ void Measure_InitModule
 (
 	ADC_DATA_T * 	channelResultBuffer,
 	uint32_t *	 	channelSumBuffer,
-	uint8_t * 		channelToADCPin,
+	uint8_t * 		channelToADCPinTable,
 	uint8_t			channelCount,
 	void (*disableGlobalIRQ)(void),
 	void (*enableGlobalIRQ)(void)
@@ -241,7 +241,7 @@ void Measure_InitModule
 {
 	ChannelResultBuffer = channelResultBuffer;
 	ChannelSumBuffer = channelSumBuffer;
-	ChannelToADCPin = channelToADCPin;
+	ChannelToADCPin = channelToADCPinTable;
 	ChannelCount = channelCount;
 	DisableIRQ = disableGlobalIRQ;
 	EnableIRQ =	enableGlobalIRQ;

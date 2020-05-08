@@ -1,6 +1,8 @@
 #ifndef _WAVEFORM_H_
 #define _WAVEFORM_H_
 
+#include <stdint.h>
+#include <stdbool.h>
 
 typedef enum
 {
