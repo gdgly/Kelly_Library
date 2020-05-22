@@ -3,16 +3,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-static void (*SetPWMVal)(uint16_t pwmA, uint16_t pwmB, uint16_t pwmC); 	/*< User provides function to set complementary PWM values */
-static void (*EnablePWM)(bool a, bool b, bool c);						/*< User provides function to enable each phase */
-static void (*InversePWMPolarity)(bool a, bool b, bool c);				/*< 1 is inverse polarity, 0 is positive */
-
-static void (*OnPhaseAB)(void); /*< User provides function e.g. measure current, start ADC*/
-static void (*OnPhaseAC)(void);
-static void (*OnPhaseBC)(void);
-static void (*OnPhaseBA)(void);
-static void (*OnPhaseCA)(void);
-static void (*OnPhaseCB)(void);
 
 #define SINE_ANGLE_DOMAIN 		383
 #define SINE_ANGLE_DOMAIN_SIZE 	384
@@ -161,9 +151,9 @@ void Waveform_DisableSinusoidalModulation(void)
 	InversePWMPolarity(0,0,0);
 }
 
-void Waveform_SetMode(WAVEFORM_MODE_T * waveformMode)
+void Waveform_SetMode(WAVEFORM_MODE_T * waveformmode)
 {
-	WaveformMode = waveformMode;
+	WaveformMode = waveformmode;
 	EnablePWM(0, 0, 0);
 	InversePWMPolarity(0,0,0);
 
@@ -189,9 +179,9 @@ static inline void SinusoidalPhaseBA(void) {Angle = 192; ISRCount = 0;};
 static inline void SinusoidalPhaseCA(void) {Angle = 256; ISRCount = 0;};
 static inline void SinusoidalPhaseCB(void) {Angle = 320; ISRCount = 0;};
 
-void Waveform_CommutatePhaseAB(WAVEFORM_T * WaveformMode, uint16_t pwm)
+void Waveform_CommutatePhaseAB(WAVEFORM_T * waveform, uint16_t pwm)
 {
-	if (WaveformMode->SinusoidalModulation)
+	if (waveform->SinusoidalModulation)
 	{
 		SinusoidalPhaseAB();
 		//if (WaveformMode == WAVEFORM_MODE_BIPOLAR_T) EnablePWM(1, 1, 0);
