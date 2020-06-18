@@ -12,12 +12,12 @@
  *----------------------------------------------------------------------------*/
 inline void BLDC_ProcessRunPoll(BLDC_CONTROLLER_T * bldc)
 {
-	if (bldc->MotorMode == MOTOR_MODE_RUN) Commutation_Poll(bldc->Commutation, bldc->PWM);
+	if (bldc->MotorMode == MOTOR_MODE_RUN) Commutation_Poll(bldc->Commutation, bldc->Waveform, bldc->PWM);
 }
 
 inline void BLDC_ProcessRunHallISR(BLDC_CONTROLLER_T * bldc)
 {
-	if (bldc->MotorMode == MOTOR_MODE_RUN) Commutation_ISR(bldc->Commutation, bldc->PWM);
+	if (bldc->MotorMode == MOTOR_MODE_RUN) Commutation_ISR(bldc->Commutation, bldc->Waveform, bldc->PWM);
 }
 
 //run in main
@@ -61,7 +61,7 @@ void BLDC_Jog(BLDC_CONTROLLER_T * bldc)
 {
 	if (bldc->JogSteps) //todo negative
 	{
-		if (Commutation_Poll(bldc->Commutation, bldc->PWM)) bldc->JogSteps--;
+		if (Commutation_Poll(bldc->Commutation, bldc->Waveform, bldc->PWM)) bldc->JogSteps--;
 	}
 }
 
@@ -110,7 +110,7 @@ uint16_t BLDC_GetPWMVoltage(BLDC_CONTROLLER_T * bldc)
 void BLDC_Start(BLDC_CONTROLLER_T * bldc)
 {
 	bldc->MotorMode = MOTOR_MODE_RUN;
-	Commutation_ISR(bldc->Commutation, bldc->PWM);
+	Commutation_ISR(bldc->Commutation, bldc->Waveform, bldc->PWM);
 	//Speed_ResetTimer(bldc->Speed);
 }
 

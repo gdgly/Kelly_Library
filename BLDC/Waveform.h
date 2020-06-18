@@ -44,7 +44,7 @@ static inline void Waveform_ModulateAngleISR(WAVEFORM_T * waveform, uint16_t pwm
 {
 	if (!waveform->SinusoidalModulation) return;
 
-	AngleOffset = AngularSpeedTime * ISRCount / *HallTimerDelta; //AngleOffset = (384*HallBaseTimerFreq/ISRFreq) * ISRCount / *HallTimerDelta;
+	waveform->AngleOffset = AngularSpeedTime * ISRCount / *HallTimerDelta; //AngleOffset = (384*HallBaseTimerFreq/ISRFreq) * ISRCount / *HallTimerDelta;
 	//AngleOffset += AngularSpeedTime / *HallTimerDelta;
 	ISRCount++;
 
@@ -117,12 +117,12 @@ static inline void Waveform_ModulateAngleISR(WAVEFORM_T * waveform, uint16_t pwm
 	}
 }
 
-void Waveform_CommutatePhaseAB(uint16_t pwm);
-void Waveform_CommutatePhaseAC(uint16_t pwm);
-void Waveform_CommutatePhaseBC(uint16_t pwm);
-void Waveform_CommutatePhaseBA(uint16_t pwm);
-void Waveform_CommutatePhaseCA(uint16_t pwm);
-void Waveform_CommutatePhaseCB(uint16_t pwm);
+void Waveform_CommutatePhaseAB(WAVEFORM_T * waveform, uint16_t pwm);
+void Waveform_CommutatePhaseAC(WAVEFORM_T * waveform, uint16_t pwm);
+void Waveform_CommutatePhaseBC(WAVEFORM_T * waveform, uint16_t pwm);
+void Waveform_CommutatePhaseBA(WAVEFORM_T * waveform, uint16_t pwm);
+void Waveform_CommutatePhaseCA(WAVEFORM_T * waveform, uint16_t pwm);
+void Waveform_CommutatePhaseCB(WAVEFORM_T * waveform, uint16_t pwm);
 
 //// From FastLED
 //

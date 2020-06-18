@@ -133,8 +133,8 @@ void Waveform_InitSinusoidalModulation
 		onPhaseCB
 	);
 
-	AngularSpeedTime = 384*hallTimerFreq/isrFreq;
-	HallTimerDelta = hallTimerDelta;
+	waveform->AngularSpeedTime = 384*hallTimerFreq/isrFreq;
+	waveform->HallTimerDelta = hallTimerDelta;
 }
 
 void Waveform_EnableSinusoidalModulation(WAVEFORM_T * waveform)
@@ -151,9 +151,10 @@ void Waveform_DisableSinusoidalModulation(WAVEFORM_T * waveform)
 	waveform->InversePWMPolarity(0,0,0);
 }
 
-void Waveform_SetMode(WAVEFORM_MODE_T * waveform)
+void Waveform_SetMode(WAVEFORM_T * waveform, WAVEFORM_MODE_T waveformMode)
 {
-	WaveformMode = waveformMode;
+	waveform->WaveformMode = waveformMode;
+
 	EnablePWM(0, 0, 0);
 	InversePWMPolarity(0,0,0);
 
@@ -188,7 +189,7 @@ void Waveform_CommutatePhaseAB(WAVEFORM_T * waveform, uint16_t pwm)
 	}
 	else
 	{
-		switch (WaveformMode)
+		switch (waveform->WaveformMode)
 		{
 			case WAVEFORM_MODE_UNIPOLAR1_T: waveform->SetPWMVal(pwm, 0, 0); 																break;
 			case WAVEFORM_MODE_UNIPOLAR2_T: waveform->SetPWMVal(PWMHalfDuty + pwm/2, PWMHalfDuty - pwm/2, 0);								break;
@@ -199,7 +200,7 @@ void Waveform_CommutatePhaseAB(WAVEFORM_T * waveform, uint16_t pwm)
 	OnPhaseAB();
 }
 
-void Waveform_CommutatePhaseAC(WAVEFORM_T * waveform,uint16_t pwm)
+void Waveform_CommutatePhaseAC(WAVEFORM_T * waveform, uint16_t pwm)
 {
 	if (waveform->SinusoidalModulation)
 	{
@@ -208,11 +209,11 @@ void Waveform_CommutatePhaseAC(WAVEFORM_T * waveform,uint16_t pwm)
 	}
 	else
 	{
-		switch (WaveformMode)
+		switch (waveform->WaveformMode)
 		{
-			case WAVEFORM_MODE_UNIPOLAR1_T: waveform->SetPWMVal(pwm, 0, 0); 																break;
-			case WAVEFORM_MODE_UNIPOLAR2_T: waveform->SetPWMVal(PWMHalfDuty + pwm/2, 0, PWMHalfDuty - pwm/2);								break;
-			case WAVEFORM_MODE_BIPOLAR_T: 	waveform->SetPWMVal(PWMHalfDuty + pwm/2, 0, PWMHalfDuty + pwm/2); waveform->InversePWMPolarity(0,0,1); 	break;
+			case WAVEFORM_MODE_UNIPOLAR1_T: waveform->SetPWMVal(pwm, 0, 0); 																							break;
+			case WAVEFORM_MODE_UNIPOLAR2_T: waveform->SetPWMVal(waveform->PWMHalfDuty + pwm/2, 0, waveform->PWMHalfDuty - pwm/2);										break;
+			case WAVEFORM_MODE_BIPOLAR_T: 	waveform->SetPWMVal(waveform->PWMHalfDuty + pwm/2, 0, waveform->PWMHalfDuty + pwm/2); waveform->InversePWMPolarity(0,0,1); 	break;
 		}
 		waveform->EnablePWM(1, 0, 1);
 	}
@@ -228,11 +229,11 @@ void Waveform_CommutatePhaseBC(WAVEFORM_T * waveform,uint16_t pwm)
 	}
 	else
 	{
-		switch (WaveformMode)
+		switch (waveform->WaveformMode)
 		{
 			case WAVEFORM_MODE_UNIPOLAR1_T: waveform->SetPWMVal(0, pwm, 0); 																break;
-			case WAVEFORM_MODE_UNIPOLAR2_T: waveform->SetPWMVal(0, PWMHalfDuty + pwm/2, PWMHalfDuty - pwm/2);								break;
-			case WAVEFORM_MODE_BIPOLAR_T: 	waveform->SetPWMVal(0, PWMHalfDuty + pwm/2, PWMHalfDuty + pwm/2); waveform->InversePWMPolarity(0,0,1); 	break;
+			case WAVEFORM_MODE_UNIPOLAR2_T: waveform->SetPWMVal(0, waveform->PWMHalfDuty + pwm/2, waveform->PWMHalfDuty - pwm/2);								break;
+			case WAVEFORM_MODE_BIPOLAR_T: 	waveform->SetPWMVal(0, waveform->PWMHalfDuty + pwm/2, waveform->PWMHalfDuty + pwm/2); waveform->InversePWMPolarity(0,0,1); 	break;
 		}
 		waveform->EnablePWM(0, 1, 1);
 	}
@@ -248,11 +249,11 @@ void Waveform_CommutatePhaseBA(WAVEFORM_T * waveform , uint16_t pwm)
 	}
 	else
 	{
-		switch (WaveformMode)
+		switch (waveform->WaveformMode)
 		{
 			case WAVEFORM_MODE_UNIPOLAR1_T: waveform->SetPWMVal(0, pwm, 0); 																break;
-			case WAVEFORM_MODE_UNIPOLAR2_T: waveform->SetPWMVal(PWMHalfDuty - pwm/2, PWMHalfDuty + pwm/2, 0);								break;
-			case WAVEFORM_MODE_BIPOLAR_T: 	waveform->SetPWMVal(PWMHalfDuty + pwm/2, PWMHalfDuty + pwm/2, 0); waveform->InversePWMPolarity(1,0,0); 	break;
+			case WAVEFORM_MODE_UNIPOLAR2_T: waveform->SetPWMVal(waveform->PWMHalfDuty - pwm/2, waveform->PWMHalfDuty + pwm/2, 0);								break;
+			case WAVEFORM_MODE_BIPOLAR_T: 	waveform->SetPWMVal(waveform->PWMHalfDuty + pwm/2, waveform->PWMHalfDuty + pwm/2, 0); waveform->InversePWMPolarity(1,0,0); 	break;
 		}
 		waveform->EnablePWM(1, 1, 0);
 	}
@@ -268,18 +269,18 @@ void Waveform_CommutatePhaseCA(WAVEFORM_T * waveform , uint16_t pwm)
 	}
 	else
 	{
-		switch (WaveformMode)
+		switch (waveform->WaveformMode)
 		{
 			case WAVEFORM_MODE_UNIPOLAR1_T: waveform->SetPWMVal(0, 0, pwm); 																break;
-			case WAVEFORM_MODE_UNIPOLAR2_T: waveform->SetPWMVal(PWMHalfDuty - pwm/2, 0, PWMHalfDuty + pwm/2);								break;
-			case WAVEFORM_MODE_BIPOLAR_T: 	waveform->SetPWMVal(PWMHalfDuty + pwm/2, 0, PWMHalfDuty + pwm/2); waveform->InversePWMPolarity(1,0,0); 	break;
+			case WAVEFORM_MODE_UNIPOLAR2_T: waveform->SetPWMVal(waveform->PWMHalfDuty - pwm/2, 0, waveform->PWMHalfDuty + pwm/2);								break;
+			case WAVEFORM_MODE_BIPOLAR_T: 	waveform->SetPWMVal(waveform->PWMHalfDuty + pwm/2, 0, waveform->PWMHalfDuty + pwm/2); waveform->InversePWMPolarity(1,0,0); 	break;
 		}
 		waveform->EnablePWM(1, 0, 1);
 	}
 	waveform->OnPhaseCA();
 }
 
-void Waveform_CommutatePhaseCB(WAVEFORM_T * waveform , uint16_t pwm)
+void Waveform_CommutatePhaseCB(WAVEFORM_T * waveform, uint16_t pwm)
 {
 	if (waveform->SinusoidalModulation)
 	{
@@ -288,11 +289,11 @@ void Waveform_CommutatePhaseCB(WAVEFORM_T * waveform , uint16_t pwm)
 	}
 	else
 	{
-		switch (WaveformMode)
+		switch (waveform->WaveformMode)
 		{
 			case WAVEFORM_MODE_UNIPOLAR1_T: waveform->SetPWMVal(0, 0, pwm); 																break;
-			case WAVEFORM_MODE_UNIPOLAR2_T: waveform->SetPWMVal(0, PWMHalfDuty - pwm/2, PWMHalfDuty + pwm/2);								break;
-			case WAVEFORM_MODE_BIPOLAR_T: 	waveform->SetPWMVal(0, PWMHalfDuty + pwm/2, PWMHalfDuty + pwm/2); waveform->InversePWMPolarity(0,1,0); 	break;
+			case WAVEFORM_MODE_UNIPOLAR2_T: waveform->SetPWMVal(0, waveform->PWMHalfDuty - pwm/2, waveform->PWMHalfDuty + pwm/2);								break;
+			case WAVEFORM_MODE_BIPOLAR_T: 	waveform->SetPWMVal(0, waveform->PWMHalfDuty + pwm/2, waveform->PWMHalfDuty + pwm/2); waveform->InversePWMPolarity(0,1,0); 	break;
 		}
 		waveform->EnablePWM(0, 1, 1);
 	}

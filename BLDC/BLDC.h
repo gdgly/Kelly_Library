@@ -13,6 +13,7 @@
 #include "Commutation.h"
 #include "PID.h"
 #include "VoltageDivider.h"
+#include "Waveform.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -32,6 +33,7 @@ typedef struct
 	SPEED_T 		* Speed;
 	PID_T 			* PID;
 	MONITOR_T 		* Monitor;
+	WAVEFORM_T 		* Waveform;
 
 	void(*ShortMotor)(void);
 	void(*FloatMotor)(void);
