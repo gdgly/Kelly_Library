@@ -13,10 +13,10 @@ bool Commutation_Poll(COMMUTATION_T * commutation, void * data, uint16_t pwm)
 	{
 		commutation->SavedHallState = commutation->GetHallState();
 		Commutation_ISR(commutation, data, pwm);
-		return true;
+		return (true);
 	}
 
-	return false;
+	return (false);
 }
 
 void Commutation_SetDirection(COMMUTATION_T * commutation, COMMUTATION_DIRECTION_T dir) 

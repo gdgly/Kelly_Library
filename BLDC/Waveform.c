@@ -3,24 +3,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-
-#define SINE_ANGLE_DOMAIN 		383
-#define SINE_ANGLE_DOMAIN_SIZE 	384
-#define SINE_ANGLE_RANGE 		255
-#define SINE_BIT_SHIFT_DIVISOR 8 // divide by 256
-#define PHASE_SHIFT_A 32
-#define PHASE_SHIFT_B 288
-#define PHASE_SHIFT_C 160
-
-#define REFERENCE_ANGLE_OFFSET_MAX 64 // delta angle within 1 phase, should not be exceeded before commutation
-
-#define REFERENCE_ANGLE_PHASE_AB 0 // reference angle resets to this value at commutation
-#define REFERENCE_ANGLE_PHASE_AC 64
-#define REFERENCE_ANGLE_PHASE_BC 128
-#define REFERENCE_ANGLE_PHASE_BA 192
-#define REFERENCE_ANGLE_PHASE_CA 256
-#define REFERENCE_ANGLE_PHASE_CB 320
-
 //Phase boundaries 32, 96, 160, 224, 288, 352
 //Phase midpoints  64, 128, 192, 256, 320, 0
 
@@ -30,8 +12,7 @@
 //PhaseBA Angle 	A:224-288	B:160-224	C:352-32
 //PhaseCA Angle 	A:288-352	B:224-288 	C:32-96
 //PhaseCB Angle 	A:352-32	B:352-32 	C:96-160
-
-static const uint8_t SINUSOIDAL_WAVE_TABLE[SINE_ANGLE_DOMAIN_SIZE] =
+const uint8_t SINUSOIDAL_WAVE_TABLE[SINE_ANGLE_SIZE] =
 {
 	127,131,135,138,142,145,149,152,155,159,162,165,168,171,174,177,180,183,186,189,192,194,197,200,202,205,207,210,212,214,217,219,
 	221,223,225,227,229,231,232,234,236,237,239,240,242,243,244,245,247,248,249,250,250,251,252,253,253,254,254,255,255,255,255,255,
@@ -47,27 +28,6 @@ static const uint8_t SINUSOIDAL_WAVE_TABLE[SINE_ANGLE_DOMAIN_SIZE] =
 	  2,  6, 10, 15, 19, 23, 27, 31, 35, 39, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96, 99,103,107,111,115,118,121,124
 };
 
-typedef enum
-{
-	WAVEFORM_MODE_UNIPOLAR1_T,
-	WAVEFORM_MODE_UNIPOLAR2_T,
-	WAVEFORM_MODE_BIPOLAR_T
-} WAVEFORM_MODE_T;
-
-WAVEFORM_MODE_T WaveformMode;
-
-static bool SinusoidalModulation;
-
-volatile static uint32_t * HallTimerDelta;
-static uint32_t AngularSpeedTime; // (384*HallTimerFreq/ISRFreq)
-static uint16_t PWMHalfDuty;
-
-volatile static uint16_t Angle;
-volatile static uint16_t AngleOffset;
-volatile static uint32_t ISRCount;
-//volatile static uint32_t PWM;
-
-
 void Waveform_Init
 (
 	WAVEFORM_T * waveform,
@@ -75,7 +35,6 @@ void Waveform_Init
 	uint16_t pwmMax,
 	void (*enablePWM)(bool a, bool b, bool c),
 	void (*invPWMPolarity)(bool a, bool b, bool c),
-
 	void (*onPhaseAB)(void),
 	void (*onPhaseAC)(void),
 	void (*onPhaseBC)(void),
@@ -121,6 +80,7 @@ void Waveform_InitSinusoidalModulation
 {
 	Waveform_Init
 	(
+		waveform,
 		setPWMVal,
 		pwmMax,
 		enablePWM,
@@ -133,7 +93,7 @@ void Waveform_InitSinusoidalModulation
 		onPhaseCB
 	);
 
-	waveform->AngularSpeedTime = 384*hallTimerFreq/isrFreq;
+	waveform->AngularSpeedTime = SINE_ANGLE_SIZE*hallTimerFreq/isrFreq;
 	waveform->HallTimerDelta = hallTimerDelta;
 }
 
@@ -155,8 +115,8 @@ void Waveform_SetMode(WAVEFORM_T * waveform, WAVEFORM_MODE_T waveformMode)
 {
 	waveform->WaveformMode = waveformMode;
 
-	EnablePWM(0, 0, 0);
-	InversePWMPolarity(0,0,0);
+	waveform->EnablePWM(0, 0, 0);
+	waveform->InversePWMPolarity(0,0,0);
 
 //	switch (WaveformMode)
 //	{
@@ -171,40 +131,47 @@ void Waveform_SetMode(WAVEFORM_T * waveform, WAVEFORM_MODE_T waveformMode)
 //	}
 }
 
+#define REFERENCE_ANGLE_PHASE_AB 0 // reference angle resets to this value at commutation
+#define REFERENCE_ANGLE_PHASE_AC 64
+#define REFERENCE_ANGLE_PHASE_BC 128
+#define REFERENCE_ANGLE_PHASE_BA 192
+#define REFERENCE_ANGLE_PHASE_CA 256
+#define REFERENCE_ANGLE_PHASE_CB 320
 
-
-static inline void SinusoidalPhaseAB(void) {Angle = 0;   ISRCount = 0;};
-static inline void SinusoidalPhaseAC(void) {Angle = 64;  ISRCount = 0;};
-static inline void SinusoidalPhaseBC(void) {Angle = 128; ISRCount = 0;};
-static inline void SinusoidalPhaseBA(void) {Angle = 192; ISRCount = 0;};
-static inline void SinusoidalPhaseCA(void) {Angle = 256; ISRCount = 0;};
-static inline void SinusoidalPhaseCB(void) {Angle = 320; ISRCount = 0;};
+//static inline void SinusoidalPhaseAB(void) {Angle = 0;   ISRCount = 0;};
+//static inline void SinusoidalPhaseAC(void) {Angle = 64;  ISRCount = 0;};
+//static inline void SinusoidalPhaseBC(void) {Angle = 128; ISRCount = 0;};
+//static inline void SinusoidalPhaseBA(void) {Angle = 192; ISRCount = 0;};
+//static inline void SinusoidalPhaseCA(void) {Angle = 256; ISRCount = 0;};
+//static inline void SinusoidalPhaseCB(void) {Angle = 320; ISRCount = 0;};
 
 void Waveform_CommutatePhaseAB(WAVEFORM_T * waveform, uint16_t pwm)
 {
 	if (waveform->SinusoidalModulation)
 	{
-		SinusoidalPhaseAB();
+		waveform->Angle = REFERENCE_ANGLE_PHASE_AB;
+		waveform->ISRCount = 0;
 		//if (WaveformMode == WAVEFORM_MODE_BIPOLAR_T) EnablePWM(1, 1, 0);
 	}
 	else
 	{
 		switch (waveform->WaveformMode)
 		{
-			case WAVEFORM_MODE_UNIPOLAR1_T: waveform->SetPWMVal(pwm, 0, 0); 																break;
-			case WAVEFORM_MODE_UNIPOLAR2_T: waveform->SetPWMVal(PWMHalfDuty + pwm/2, PWMHalfDuty - pwm/2, 0);								break;
-			case WAVEFORM_MODE_BIPOLAR_T: 	waveform->SetPWMVal(PWMHalfDuty + pwm/2, PWMHalfDuty + pwm/2, 0); waveform->InversePWMPolarity(0,1,0); 	break;
+			case WAVEFORM_MODE_UNIPOLAR1_T: waveform->SetPWMVal(pwm, 0, 0); 																							break;
+			case WAVEFORM_MODE_UNIPOLAR2_T: waveform->SetPWMVal(waveform->PWMHalfDuty + pwm/2, waveform->PWMHalfDuty - pwm/2, 0);										break;
+			case WAVEFORM_MODE_BIPOLAR_T: 	waveform->SetPWMVal(waveform->PWMHalfDuty + pwm/2, waveform->PWMHalfDuty + pwm/2, 0); waveform->InversePWMPolarity(0,1,0); 	break;
 		}
 		waveform->EnablePWM(1, 1, 0);
 	}
-	OnPhaseAB();
+	waveform->OnPhaseAB();
 }
 
 void Waveform_CommutatePhaseAC(WAVEFORM_T * waveform, uint16_t pwm)
 {
 	if (waveform->SinusoidalModulation)
 	{
-		SinusoidalPhaseAC();
+		waveform->Angle = REFERENCE_ANGLE_PHASE_AC;
+		waveform->ISRCount = 0;
 		//if (WaveformMode == WAVEFORM_MODE_BIPOLAR_T) EnablePWM(1, 0, 1);
 	}
 	else
@@ -224,15 +191,16 @@ void Waveform_CommutatePhaseBC(WAVEFORM_T * waveform,uint16_t pwm)
 {
 	if (waveform->SinusoidalModulation)
 	{
-		SinusoidalPhaseBC();
+		waveform->Angle = REFERENCE_ANGLE_PHASE_BC;
+		waveform->ISRCount = 0;
 		//if (WaveformMode == WAVEFORM_MODE_BIPOLAR_T) EnablePWM(0, 1, 1);
 	}
 	else
 	{
 		switch (waveform->WaveformMode)
 		{
-			case WAVEFORM_MODE_UNIPOLAR1_T: waveform->SetPWMVal(0, pwm, 0); 																break;
-			case WAVEFORM_MODE_UNIPOLAR2_T: waveform->SetPWMVal(0, waveform->PWMHalfDuty + pwm/2, waveform->PWMHalfDuty - pwm/2);								break;
+			case WAVEFORM_MODE_UNIPOLAR1_T: waveform->SetPWMVal(0, pwm, 0); 																							break;
+			case WAVEFORM_MODE_UNIPOLAR2_T: waveform->SetPWMVal(0, waveform->PWMHalfDuty + pwm/2, waveform->PWMHalfDuty - pwm/2);										break;
 			case WAVEFORM_MODE_BIPOLAR_T: 	waveform->SetPWMVal(0, waveform->PWMHalfDuty + pwm/2, waveform->PWMHalfDuty + pwm/2); waveform->InversePWMPolarity(0,0,1); 	break;
 		}
 		waveform->EnablePWM(0, 1, 1);
@@ -244,15 +212,16 @@ void Waveform_CommutatePhaseBA(WAVEFORM_T * waveform , uint16_t pwm)
 {
 	if (waveform->SinusoidalModulation)
 	{
-		SinusoidalPhaseBA();
+		waveform->Angle = REFERENCE_ANGLE_PHASE_BA;
+		waveform->ISRCount = 0;
 		//if (WaveformMode == WAVEFORM_MODE_BIPOLAR_T) EnablePWM(1, 1, 0);
 	}
 	else
 	{
 		switch (waveform->WaveformMode)
 		{
-			case WAVEFORM_MODE_UNIPOLAR1_T: waveform->SetPWMVal(0, pwm, 0); 																break;
-			case WAVEFORM_MODE_UNIPOLAR2_T: waveform->SetPWMVal(waveform->PWMHalfDuty - pwm/2, waveform->PWMHalfDuty + pwm/2, 0);								break;
+			case WAVEFORM_MODE_UNIPOLAR1_T: waveform->SetPWMVal(0, pwm, 0); 																							break;
+			case WAVEFORM_MODE_UNIPOLAR2_T: waveform->SetPWMVal(waveform->PWMHalfDuty - pwm/2, waveform->PWMHalfDuty + pwm/2, 0);										break;
 			case WAVEFORM_MODE_BIPOLAR_T: 	waveform->SetPWMVal(waveform->PWMHalfDuty + pwm/2, waveform->PWMHalfDuty + pwm/2, 0); waveform->InversePWMPolarity(1,0,0); 	break;
 		}
 		waveform->EnablePWM(1, 1, 0);
@@ -264,15 +233,16 @@ void Waveform_CommutatePhaseCA(WAVEFORM_T * waveform , uint16_t pwm)
 {
 	if (waveform->SinusoidalModulation)
 	{
-		SinusoidalPhaseCA();
+		waveform->Angle = REFERENCE_ANGLE_PHASE_CA;
+		waveform->ISRCount = 0;
 		//if (WaveformMode == WAVEFORM_MODE_BIPOLAR_T) EnablePWM(1, 0, 1);
 	}
 	else
 	{
 		switch (waveform->WaveformMode)
 		{
-			case WAVEFORM_MODE_UNIPOLAR1_T: waveform->SetPWMVal(0, 0, pwm); 																break;
-			case WAVEFORM_MODE_UNIPOLAR2_T: waveform->SetPWMVal(waveform->PWMHalfDuty - pwm/2, 0, waveform->PWMHalfDuty + pwm/2);								break;
+			case WAVEFORM_MODE_UNIPOLAR1_T: waveform->SetPWMVal(0, 0, pwm); 																							break;
+			case WAVEFORM_MODE_UNIPOLAR2_T: waveform->SetPWMVal(waveform->PWMHalfDuty - pwm/2, 0, waveform->PWMHalfDuty + pwm/2);										break;
 			case WAVEFORM_MODE_BIPOLAR_T: 	waveform->SetPWMVal(waveform->PWMHalfDuty + pwm/2, 0, waveform->PWMHalfDuty + pwm/2); waveform->InversePWMPolarity(1,0,0); 	break;
 		}
 		waveform->EnablePWM(1, 0, 1);
@@ -284,15 +254,16 @@ void Waveform_CommutatePhaseCB(WAVEFORM_T * waveform, uint16_t pwm)
 {
 	if (waveform->SinusoidalModulation)
 	{
-		SinusoidalPhaseCB();
+		waveform->Angle = REFERENCE_ANGLE_PHASE_CB;
+		waveform->ISRCount = 0;
 		//if (WaveformMode == WAVEFORM_MODE_BIPOLAR_T) EnablePWM(0, 1, 1);
 	}
 	else
 	{
 		switch (waveform->WaveformMode)
 		{
-			case WAVEFORM_MODE_UNIPOLAR1_T: waveform->SetPWMVal(0, 0, pwm); 																break;
-			case WAVEFORM_MODE_UNIPOLAR2_T: waveform->SetPWMVal(0, waveform->PWMHalfDuty - pwm/2, waveform->PWMHalfDuty + pwm/2);								break;
+			case WAVEFORM_MODE_UNIPOLAR1_T: waveform->SetPWMVal(0, 0, pwm); 																							break;
+			case WAVEFORM_MODE_UNIPOLAR2_T: waveform->SetPWMVal(0, waveform->PWMHalfDuty - pwm/2, waveform->PWMHalfDuty + pwm/2);										break;
 			case WAVEFORM_MODE_BIPOLAR_T: 	waveform->SetPWMVal(0, waveform->PWMHalfDuty + pwm/2, waveform->PWMHalfDuty + pwm/2); waveform->InversePWMPolarity(0,1,0); 	break;
 		}
 		waveform->EnablePWM(0, 1, 1);

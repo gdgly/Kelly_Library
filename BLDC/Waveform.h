@@ -4,6 +4,29 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define SINE_ANGLE_MAX 	383
+#define SINE_ANGLE_SIZE	384
+#define SINE_RANGE_MAX 	255
+#define SINE_RANGE_SIZE	256
+#define SINE_BIT_SHIFT_DIVISOR 8 // divide by 256
+#define PHASE_SHIFT_A 32
+#define PHASE_SHIFT_B 288
+#define PHASE_SHIFT_C 160
+
+#define REFERENCE_ANGLE_OFFSET_MAX 64 // delta angle within 1 phase, should not be exceeded before commutation
+
+#define REFERENCE_ANGLE_PHASE_AB 0 // reference angle resets to this value at commutation
+#define REFERENCE_ANGLE_PHASE_AC 64
+#define REFERENCE_ANGLE_PHASE_BC 128
+#define REFERENCE_ANGLE_PHASE_BA 192
+#define REFERENCE_ANGLE_PHASE_CA 256
+#define REFERENCE_ANGLE_PHASE_CB 320
+
+//static inline uint32_t IntegerBitShiftDividePowerOf2(uint32_t dividend, uint32_t divisor)
+//{
+//	(dividend + ((dividend >> 31) & ((1 << divisor) + ~0))) >> divisor;
+//}
+
 typedef enum
 {
 	WAVEFORM_MODE_UNIPOLAR1_T,
@@ -17,12 +40,14 @@ typedef struct
 	uint32_t PWMHalfDuty;
 
 	bool SinusoidalModulation;
+	uint32_t AngularSpeedTime; // (384*HallBaseTimerFreq/ISRFreq)
+
 	volatile  uint16_t Angle;
 	volatile  uint16_t AngleOffset;
 //	volatile  uint32_t PWM;
 	volatile  uint32_t * HallTimerDelta;
 	volatile  uint32_t ISRCount;
-	uint32_t AngularSpeedTime; // (384*HallBaseTimerFreq/ISRFreq)
+
 
 	void (*SetPWMVal)(uint16_t pwmA, uint16_t pwmB, uint16_t pwmC); 	/*< User provides function to set complementary PWM values */
 	void (*EnablePWM)(bool a, bool b, bool c);							/*< User provides function to enable each phase */
@@ -36,6 +61,7 @@ typedef struct
 	void (*OnPhaseCB)(void);
 } WAVEFORM_T;
 
+extern const uint8_t SINUSOIDAL_WAVE_TABLE[SINE_ANGLE_SIZE];
 
 //AngleOffset[degrees] = ISRCount * ISRTime [us] * AngularSpeed [degrees/us]
 //AngleOffset[degrees] = ISRCount * ISRTime [us] * CYCLE_DOMAIN [degrees] * CycleFreq [cycles/us]
@@ -44,15 +70,15 @@ static inline void Waveform_ModulateAngleISR(WAVEFORM_T * waveform, uint16_t pwm
 {
 	if (!waveform->SinusoidalModulation) return;
 
-	waveform->AngleOffset = AngularSpeedTime * ISRCount / *HallTimerDelta; //AngleOffset = (384*HallBaseTimerFreq/ISRFreq) * ISRCount / *HallTimerDelta;
 	//AngleOffset += AngularSpeedTime / *HallTimerDelta;
-	ISRCount++;
+	waveform->AngleOffset = waveform->AngularSpeedTime * waveform->ISRCount / *(waveform->HallTimerDelta); //AngleOffset = (384*HallBaseTimerFreq/ISRFreq) * ISRCount / *HallTimerDelta;
+	waveform->ISRCount++;
 
-	if (AngleOffset > 64) AngleOffset = 64; // angle offset range of 0-64, should not exceed before commutation
+	if (waveform->AngleOffset > REFERENCE_ANGLE_OFFSET_MAX) waveform->AngleOffset = REFERENCE_ANGLE_OFFSET_MAX; // angle offset range of 0-64, should not exceed 64 before commutation
 
-	uint8_t sineFactorA;
-	uint8_t sineFactorB;
-	uint8_t sineFactorC;
+	uint8_t sineOfA;
+	uint8_t sineOfB;
+	uint8_t sineOfC;
 
 	bool invA, invB, invC;
 
@@ -60,58 +86,105 @@ static inline void Waveform_ModulateAngleISR(WAVEFORM_T * waveform, uint16_t pwm
 	uint16_t angleB;
 	uint16_t angleC;
 
-	switch (WaveformMode)
+	angleA = PHASE_SHIFT_A + waveform->Angle + waveform->AngleOffset;
+	if (angleA > SINE_ANGLE_MAX) angleA = angleA - SINE_ANGLE_SIZE; // angle should not exceed 2*SINE_ANGLE_DOMAIN_SIZE
+
+	angleB = PHASE_SHIFT_B + waveform->Angle + waveform->AngleOffset;
+	if (angleB > SINE_ANGLE_MAX) angleB = angleB - SINE_ANGLE_SIZE;
+
+	angleC = PHASE_SHIFT_C + waveform->Angle + waveform->AngleOffset;
+	if (angleC > SINE_ANGLE_MAX) angleC = angleC - SINE_ANGLE_SIZE;
+
+	switch (waveform->WaveformMode)
 	{
 		case WAVEFORM_MODE_UNIPOLAR1_T:
-			//if ((32 + Angle + AngleOffset) > 383)  angle = (32 	+ Angle + AngleOffset) - 384
-			sineFactorA = SINUSOIDAL_WAVE_TABLE[(PHASE_SHIFT_A + Angle + AngleOffset) % 384];
-			sineFactorB = SINUSOIDAL_WAVE_TABLE[(PHASE_SHIFT_B + Angle + AngleOffset) % 384];
-			sineFactorC = SINUSOIDAL_WAVE_TABLE[(PHASE_SHIFT_C + Angle + AngleOffset) % 384];
+//			sineFactorA = SINUSOIDAL_WAVE_TABLE[ (PHASE_SHIFT_A + waveform->Angle + waveform->AngleOffset) % 384 ];
+//			sineFactorB = SINUSOIDAL_WAVE_TABLE[ (PHASE_SHIFT_B + waveform->Angle + waveform->AngleOffset) % 384 ];
+//			sineFactorC = SINUSOIDAL_WAVE_TABLE[ (PHASE_SHIFT_C + waveform->Angle + waveform->AngleOffset) % 384 ];
+			sineOfA = SINUSOIDAL_WAVE_TABLE[angleA];
+			sineOfB = SINUSOIDAL_WAVE_TABLE[angleB];
+			sineOfC = SINUSOIDAL_WAVE_TABLE[angleC];
 
-			SetPWMVal
+			waveform->SetPWMVal
 			(
-				(sineFactorA+1) * pwm >> SINE_BIT_SHIFT_DIVISOR,
-				(sineFactorB+1) * pwm >> SINE_BIT_SHIFT_DIVISOR,
-				(sineFactorC+1) * pwm >> SINE_BIT_SHIFT_DIVISOR
+				(sineOfA * pwm) / SINE_RANGE_MAX,
+				(sineOfB * pwm) / SINE_RANGE_MAX,
+				(sineOfC * pwm) / SINE_RANGE_MAX
 			);
 			break;
 
 		case WAVEFORM_MODE_UNIPOLAR2_T:
-			sineFactorA = SINUSOIDAL_WAVE_TABLE[(PHASE_SHIFT_A + Angle + AngleOffset) % 384];
-			sineFactorB = SINUSOIDAL_WAVE_TABLE[(PHASE_SHIFT_B + Angle + AngleOffset) % 384];
-			sineFactorC = SINUSOIDAL_WAVE_TABLE[(PHASE_SHIFT_C + Angle + AngleOffset) % 384];
+//			sineFactorA = SINUSOIDAL_WAVE_TABLE[ (PHASE_SHIFT_A + waveform->Angle + waveform->AngleOffset) % 384 ];
+//			sineFactorB = SINUSOIDAL_WAVE_TABLE[ (PHASE_SHIFT_B + waveform->Angle + waveform->AngleOffset) % 384 ];
+//			sineFactorC = SINUSOIDAL_WAVE_TABLE[ (PHASE_SHIFT_C + waveform->Angle + waveform->AngleOffset) % 384 ];
 
-			SetPWMVal
+			sineOfA = SINUSOIDAL_WAVE_TABLE[angleA];
+			sineOfB = SINUSOIDAL_WAVE_TABLE[angleB];
+			sineOfC = SINUSOIDAL_WAVE_TABLE[angleC];
+
+			waveform->SetPWMVal
 			(
 				// pwm factor = sin[-1,1](t) = sin[0,1](t)*2-1 = (sin[0,255](t)*2 - 255)/255
-				PWMHalfDuty + ( ((int32_t)(sineFactorA+1)*2 - SINE_ANGLE_RANGE)*pwm >> (SINE_BIT_SHIFT_DIVISOR+1) ),	//PWMHalfDuty + (sineFactorA * 2 - 255) * (pwm/2) / 255,
-				PWMHalfDuty + ( ((int32_t)(sineFactorB+1)*2 - SINE_ANGLE_RANGE)*pwm >> (SINE_BIT_SHIFT_DIVISOR+1) ),
-				PWMHalfDuty + ( ((int32_t)(sineFactorC+1)*2 - SINE_ANGLE_RANGE)*pwm >> (SINE_BIT_SHIFT_DIVISOR+1) )
+				waveform->PWMHalfDuty + ( (((int32_t)sineOfA * 2 - SINE_RANGE_MAX) * pwm) / SINE_RANGE_MAX / 2 ),	//PWMHalfDuty + (sineFactorA * 2 - 255) * (pwm/2) / 255,
+				waveform->PWMHalfDuty + ( (((int32_t)sineOfB * 2 - SINE_RANGE_MAX) * pwm) / SINE_RANGE_MAX / 2 ),
+				waveform->PWMHalfDuty + ( (((int32_t)sineOfC * 2 - SINE_RANGE_MAX) * pwm) / SINE_RANGE_MAX / 2 )
 			);
 			break;
 
 		case WAVEFORM_MODE_BIPOLAR_T:
-
-			angleA = (PHASE_SHIFT_A + Angle + AngleOffset) % 384;
-			angleB = (PHASE_SHIFT_B + Angle + AngleOffset) % 384;
-			angleC = (PHASE_SHIFT_C + Angle + AngleOffset) % 384;
+//			angleA = (PHASE_SHIFT_A + waveform->Angle + waveform->AngleOffset) % SINE_ANGLE_DOMAIN_MAX;
+//			angleB = (PHASE_SHIFT_B + waveform->Angle + waveform->AngleOffset) % SINE_ANGLE_DOMAIN_MAX;
+//			angleC = (PHASE_SHIFT_C + waveform->Angle + waveform->AngleOffset) % SINE_ANGLE_DOMAIN_MAX;
 
 			// angle[0,191] -> positive, [192,383] -> negative
-			invA = (191 < angleA && angleA < 384) ? 0 : 1;
-			invB = (191 < angleB && angleB < 384) ? 0 : 1;
-			invC = (191 < angleC && angleC < 384) ? 0 : 1;
+//
+//			invB = (angleB > 191 /*&& angleB < 384*/) ? 1 : 0;
+//			invC = (angleC > 191 /*&& angleC < 384*/) ? 1 : 0;
 
-			sineFactorA = SINUSOIDAL_WAVE_TABLE[angleA % 192];
-			sineFactorB = SINUSOIDAL_WAVE_TABLE[angleB % 192];
-			sineFactorC = SINUSOIDAL_WAVE_TABLE[angleC % 192];
+//			sineOfA = SINUSOIDAL_WAVE_TABLE[angleA % 192];
+//			sineOfB = SINUSOIDAL_WAVE_TABLE[angleB % 192];
+//			sineOfC = SINUSOIDAL_WAVE_TABLE[angleC % 192];
 
-			InversePWMPolarity(invA, invB, invC); // phase between angle [352, 0, 32] or [160, 192, 224] will change polarity
+			if (angleA > SINE_ANGLE_MAX/2)
+			{
+				invA = true;
+				sineOfA = SINUSOIDAL_WAVE_TABLE[angleA - 192];
+			}
+			else
+			{
+				invA = false;
+				sineOfA = SINUSOIDAL_WAVE_TABLE[angleA];
+			}
 
-			SetPWMVal
+			if (angleB > SINE_ANGLE_MAX/2)
+			{
+				invB = true;
+				sineOfB = SINUSOIDAL_WAVE_TABLE[angleB - 192];
+			}
+			else
+			{
+				invB = false;
+				sineOfB = SINUSOIDAL_WAVE_TABLE[angleB];
+			}
+
+			if (angleC > SINE_ANGLE_MAX/2)
+			{
+				invC = true;
+				sineOfC = SINUSOIDAL_WAVE_TABLE[angleC - 192];
+			}
+			else
+			{
+				invC = false;
+				sineOfC = SINUSOIDAL_WAVE_TABLE[angleC];
+			}
+
+			waveform->InversePWMPolarity(invA, invB, invC); // phase between angle [352, 0, 32] or [160, 192, 224] will change polarity
+
+			waveform->SetPWMVal
 			(
-				PWMHalfDuty + (sineFactorA*pwm >> (SINE_BIT_SHIFT_DIVISOR+1)), // PWMHalfDuty + sineFactorA * (pwm/2) / 255,
-				PWMHalfDuty + (sineFactorB*pwm >> (SINE_BIT_SHIFT_DIVISOR+1)),
-				PWMHalfDuty + (sineFactorC*pwm >> (SINE_BIT_SHIFT_DIVISOR+1))
+				waveform->PWMHalfDuty + (sineOfA * pwm / SINE_RANGE_MAX / 2), // PWMHalfDuty + sineFactorA * (pwm/2) / 255,
+				waveform->PWMHalfDuty + (sineOfB * pwm / SINE_RANGE_MAX / 2),
+				waveform->PWMHalfDuty + (sineOfC * pwm / SINE_RANGE_MAX / 2)
 			);
 			break;
 	}

@@ -54,6 +54,7 @@ typedef struct
 }
 BLDC_CONTROLLER_T;
 
+
 void BLDC_ProcessRunPoll(BLDC_CONTROLLER_T * bldc);
 void BLDC_ProcessRunHallISR(BLDC_CONTROLLER_T * bldc);
 

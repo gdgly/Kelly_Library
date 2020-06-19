@@ -74,10 +74,10 @@ void BLDC_SetJogSteps(BLDC_CONTROLLER_T * bldc, uint8_t steps)
 /*-----------------------------------------------------------------------------
   PWM
  *----------------------------------------------------------------------------*/
-void BLDC_ApplyPWM(BLDC_CONTROLLER_T * bldc)
-{
-	Commutation_SetPhasePWM(bldc->Commutation, bldc->PWM);
-}
+//void BLDC_ApplyPWM(BLDC_CONTROLLER_T * bldc)
+//{
+//	Commutation_SetPhasePWM(bldc->Commutation, bldc->PWM);
+//}
 
 void BLDC_SetPWM(BLDC_CONTROLLER_T * bldc, uint16_t pwm)
 {
@@ -160,9 +160,11 @@ void BLDC_Init
 (
 	BLDC_CONTROLLER_T * bldc,
 	COMMUTATION_T * commutation,
+	WAVEFORM_T * waveform,
 	SPEED_T * speed,
 	PID_T * pid,
 	MONITOR_T * monitor,
+
 
 	void(*floatMotor)(void),
 	void(*shortMotor)(void),
@@ -173,13 +175,14 @@ void BLDC_Init
 	bldc->Speed = speed;
 	bldc->PID = pid;
 	bldc->Monitor = monitor;
+	bldc->Waveform = waveform;
 
-	bldc->PWMMax = pwmMax;
 
 	bldc->FloatMotor = floatMotor;
 	bldc->ShortMotor = shortMotor;
-	bldc->MotorMode	= MOTOR_MODE_STANDBY;
+	bldc->PWMMax = pwmMax;
 
+	bldc->MotorMode	= MOTOR_MODE_STANDBY;
 	bldc->RPM = 0;
 }
 

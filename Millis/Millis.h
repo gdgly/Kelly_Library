@@ -11,6 +11,8 @@
 #define SYSTICK_COUNT() (SYST_CVR)
 
 uint32_t Millis(void);
+uint32_t Micros(void);
+
 void Delay(uint32_t ms);
 
 void Millis_Init(uint32_t fCPU, uint8_t priroity);
