@@ -125,9 +125,9 @@ static inline void Waveform_ModulateAngleISR(WAVEFORM_T * waveform, uint16_t pwm
 			waveform->SetPWMVal
 			(
 				// pwm factor = sin[-1,1](t) = sin[0,1](t)*2-1 = (sin[0,255](t)*2 - 255)/255
-				waveform->PWMHalfDuty + ( (((int32_t)sineOfA * 2 - SINE_RANGE_MAX) * pwm) / SINE_RANGE_MAX / 2 ),	//PWMHalfDuty + (sineFactorA * 2 - 255) * (pwm/2) / 255,
-				waveform->PWMHalfDuty + ( (((int32_t)sineOfB * 2 - SINE_RANGE_MAX) * pwm) / SINE_RANGE_MAX / 2 ),
-				waveform->PWMHalfDuty + ( (((int32_t)sineOfC * 2 - SINE_RANGE_MAX) * pwm) / SINE_RANGE_MAX / 2 )
+				waveform->PWMHalfDuty + ( (((int32_t)sineOfA - SINE_RANGE_MAX / 2) * pwm) / SINE_RANGE_MAX ),	//PWMHalfDuty + (sineFactorA * 2 - 255) * (pwm/2) / 255,
+				waveform->PWMHalfDuty + ( (((int32_t)sineOfB - SINE_RANGE_MAX / 2) * pwm) / SINE_RANGE_MAX ),
+				waveform->PWMHalfDuty + ( (((int32_t)sineOfC - SINE_RANGE_MAX / 2) * pwm) / SINE_RANGE_MAX )
 			);
 			break;
 
@@ -148,7 +148,7 @@ static inline void Waveform_ModulateAngleISR(WAVEFORM_T * waveform, uint16_t pwm
 			if (angleA > SINE_ANGLE_MAX/2)
 			{
 				invA = true;
-				sineOfA = SINUSOIDAL_WAVE_TABLE[angleA - 192];
+				sineOfA = SINUSOIDAL_WAVE_TABLE[angleA - SINE_ANGLE_MAX/2];
 			}
 			else
 			{
@@ -159,7 +159,7 @@ static inline void Waveform_ModulateAngleISR(WAVEFORM_T * waveform, uint16_t pwm
 			if (angleB > SINE_ANGLE_MAX/2)
 			{
 				invB = true;
-				sineOfB = SINUSOIDAL_WAVE_TABLE[angleB - 192];
+				sineOfB = SINUSOIDAL_WAVE_TABLE[angleB - SINE_ANGLE_MAX/2];
 			}
 			else
 			{
@@ -170,7 +170,7 @@ static inline void Waveform_ModulateAngleISR(WAVEFORM_T * waveform, uint16_t pwm
 			if (angleC > SINE_ANGLE_MAX/2)
 			{
 				invC = true;
-				sineOfC = SINUSOIDAL_WAVE_TABLE[angleC - 192];
+				sineOfC = SINUSOIDAL_WAVE_TABLE[angleC - SINE_ANGLE_MAX/2];
 			}
 			else
 			{
@@ -182,9 +182,9 @@ static inline void Waveform_ModulateAngleISR(WAVEFORM_T * waveform, uint16_t pwm
 
 			waveform->SetPWMVal
 			(
-				waveform->PWMHalfDuty + (sineOfA * pwm / SINE_RANGE_MAX / 2), // PWMHalfDuty + sineFactorA * (pwm/2) / 255,
-				waveform->PWMHalfDuty + (sineOfB * pwm / SINE_RANGE_MAX / 2),
-				waveform->PWMHalfDuty + (sineOfC * pwm / SINE_RANGE_MAX / 2)
+				waveform->PWMHalfDuty + (sineOfA * pwm / (SINE_RANGE_MAX * 2)), // PWMHalfDuty + sineFactorA * (pwm/2) / 255,
+				waveform->PWMHalfDuty + (sineOfB * pwm / (SINE_RANGE_MAX * 2)),
+				waveform->PWMHalfDuty + (sineOfC * pwm / (SINE_RANGE_MAX * 2))
 			);
 			break;
 	}
