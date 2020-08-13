@@ -8,7 +8,7 @@
 #ifndef _BLDC_MONITOR_H_
 #define _BLDC_MONITOR_H_
 
-#include "VoltageDivider.h"
+#include "VoltageDivider/VoltageDivider.h"
 
 #include <stdint.h>
 #include <stdbool.h>

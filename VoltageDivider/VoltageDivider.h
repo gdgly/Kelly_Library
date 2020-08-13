@@ -7,17 +7,20 @@
 
 #include <stdint.h>
 
-#ifndef VOLTAGEDIVIDER_H_
-#define VOLTAGEDIVIDER_H_
+#ifndef _VOLTAGE_DIVIDER_H_
+#define _VOLTAGE_DIVIDER_H_
 
 typedef struct VoltageDivider
 {
-	uint32_t VPerADCTop;		/*!< (VREF*(R1_RATIO+R2_RATIO)) */
-	uint32_t VPerADCBottom;		/*!< (R2_RATIO*ADC_RES) */
+	uint32_t VPerADCFactor;			/*!< (VREF*(R1_RATIO+R2_RATIO)) */
+	uint32_t VPerADCDivisor;		/*!< (R2_RATIO*ADC_RES) */
+#ifdef VOLTAGE_DIVIDER_CONFIG_FAST
+	uint32_t ADCBits;
+#endif
 } VOLTAGE_DIVIDER_T;
 
-void VoltageDivider_Init(VOLTAGE_DIVIDER_T * div, uint32_t r1Ratio, uint32_t r2Ratio, uint8_t vRef, uint16_t adcMax);
+void VoltageDivider_Init(VOLTAGE_DIVIDER_T * div, uint32_t r1Ratio, uint32_t r2Ratio, uint8_t vRef, uint16_t adcBits);
 uint16_t VoltageDivider_GetVoltage(VOLTAGE_DIVIDER_T * div, uint16_t adcRaw);
 uint16_t VoltageDivider_GetADCRaw(VOLTAGE_DIVIDER_T * div, uint16_t voltage);
 
-#endif /* VOLTAGEDIVIDER_H_ */
+#endif /* _VOLTAGE_DIVIDER_H_ */

@@ -23,23 +23,18 @@
     @brief 	Voltage to ADC values conversion using voltage divider.
     		Calculates and holds ADCU voltage conversion ratios
 
-	DIV = R2RATIO/(R1RATIO + R2RATIO)
-	VDIV = VIN*DIV
-	VDIV_PER_ADC = VREF/ADCMAX
-	ADC = VDIV/VDIV_PER_ADC
+	VDIV = VIN*(R2/(R1+R2))
+	DIV = (R2/(R1+R2))
+	VADC_RES = VREF/ADC_MAX
 
-	ADC = VIN*(R2RATIO/(R1RATIO + R2RATIO))/(VREF/ADCMAX)
-	ADC = VIN*(ADCMAX*R2RATIO)/((R1RATIO + R2RATIO)*VREF)
+	ADC = VIN*DIV/VADC_RES = VIN*(R2*ADC_MAX)/((R1+R2)*VREF)
+	VIN = ADC*VADC_RES/DIV = ADC*(VREF*(R1+R2))/(ADC_MAX*R2)
 
 	VIN_PER_ADC == VIN/ADC:
-	VIN*DIV = ADC*VDIV_PER_ADC
-	VIN/ADC = VDIV_PER_ADC/DIV
-	VIN_PER_ADC = VDIV_PER_ADC/DIV
-	VIN_PER_ADC = VREF/ADCMAX/(R2RATIO/(R1RAIO + R2RATIO))
-	VIN_PER_ADC = VREF*(R1RAIO + R2RATIO)/(ADCMAX*R2RATIO)
+	VIN_PER_ADC = VADC_RES/DIV = VREF*(R1 + R2)/(ADC_MAX*R2)
 */
 /******************************************************************************/
-#include "VoltageDivider.h"
+#include "VoltageDivider/VoltageDivider.h"
 
 /******************************************************************************/
 /*!
@@ -47,66 +42,101 @@
  * Struct contains numerator and denominator of ADC to Vin conversion factor.
  *
  * @param[in] div - Struct containing calculated intermediate values
- * @param[in] r1Ratio - R1 value expressed as a whole number
- * @param[in] r2Ratio - R2 value expressed as a whole number
+ * @param[in] r1 - R1 value expressed as a whole number
+ * @param[in] r2 - R2 value expressed as a whole number
  * @param[in] vRef - reference voltage
  * @param[in] adcMax - ADC range maximum
  */
 /******************************************************************************/
-void VoltageDivider_Init(VOLTAGE_DIVIDER_T * div, uint32_t r1Ratio, uint32_t r2Ratio, uint8_t vRef, uint16_t adcMax)
+#ifndef VOLTAGE_DIVIDER_CONFIG_FAST
+void VoltageDivider_Init(VOLTAGE_DIVIDER_T * div, uint32_t r1, uint32_t r2, uint8_t vRef, uint16_t adcBits)
 {
-	div->VPerADCTop = vRef*(r1Ratio+r2Ratio);
-	div->VPerADCBottom = adcMax*r2Ratio;
+	div->VPerADCFactor = vRef * (r1 + r2);
+	div->VPerADCDivisor = (2^adcBits - 1) * r2;
 }
+#else
+void VoltageDivider_Init(VOLTAGE_DIVIDER_T * div, uint32_t r1, uint32_t r2, uint8_t vRef, uint8_t adcBits)
+{
+	div->VPerADCFactor = ((vRef * (r1 + r2)) << (16 - adcBits)) / r2; 	// (VREF*(R1 + R2) << 16)/(ADC_MAX*R2)
+	div->VPerADCDivisor = ((r2 << (adcBits)) / (vRef * (r1 + r2)));		// ((ADC_MAX*R2) << 16)/(VREF*(R1 + R2))
+	div->ADCBits = adcBits;
+}
+#endif
 
 /******************************************************************************/
 /*!
  * @brief Calculate voltage from given ADC value
  *
- * @param[in] div - Struct containing calculated intermediate values
+ * @param[in] div - struct containing calculated intermediate values
  * @param[in] adcRaw - ADC value
  * @return Calculated voltage
  */
 /******************************************************************************/
+#ifndef VOLTAGE_DIVIDER_CONFIG_FAST
 uint16_t VoltageDivider_GetVoltage(VOLTAGE_DIVIDER_T * div, uint16_t adcRaw)
 {
-	return (adcRaw*div->VPerADCTop + (div->VPerADCBottom/2) )/div->VPerADCBottom; // (adcRaw*VREF*(R1_RATIO+R2_RATIO))/(R2_RATIO*ADC_RES); // add (div->VPerADCBottom/2) to round up .5
+	return ((adcRaw * div->VPerADCFactor + (div->VPerADCDivisor / 2)) / div->VPerADCDivisor); // (adcRaw*VREF*(R1+R2))/(ADC_RES*R2); // add (div->VPerADCDivisor/2) to round up .5
 }
+#else
+uint16_t VoltageDivider_GetVoltage(VOLTAGE_DIVIDER_T * div, uint16_t adcRaw)
+{
+	return ((adcRaw * div->VPerADCFactor) >> 16);
+}
+#endif
+
 
 /******************************************************************************/
 /*!
- * @brief Calculate voltage from given ADC value
+ * @brief Calculate voltage from given ADC value, include extra decimal digits
  *
- * @param[in] div - Struct containing calculated intermediate values
+ * @param[in] div - struct containing calculated intermediate values
  * @param[in] adcRaw - ADC value
- * @param[in] precision - number of decimal digits
+ * @param[in] digits - number of decimal digits
  * @return Calculated voltage
  */
 /******************************************************************************/
-uint16_t VoltageDivider_GetVoltage10(VOLTAGE_DIVIDER_T * div, uint16_t adcRaw, uint8_t precision)
+#ifndef VOLTAGE_DIVIDER_CONFIG_FAST
+uint16_t VoltageDivider_GetVoltageDigits(VOLTAGE_DIVIDER_T * div, uint16_t adcRaw, uint8_t digits)
 {
-	return (adcRaw*div->VPerADCTop*(10^precision))/div->VPerADCBottom;
+	return ((adcRaw*div->VPerADCFactor * (10^digits)) / div->VPerADCDivisor);
 }
+#else
+uint16_t VoltageDivider_GetVoltageDigits(VOLTAGE_DIVIDER_T * div, uint16_t adcRaw, uint8_t digits)
+{
+	return (((adcRaw * div->VPerADCFactor) * (10^digits)) >> 16);
+}
+#endif
 
 /******************************************************************************/
 /*!
  * @brief Calculate ADC value from given voltage
  *
- * @param[in] div - Struct containing calculated intermediate values
+ * @param[in] div - struct containing calculated intermediate values
  * @param[in] voltage - voltage
  * @return Calculated ADC value
  */
 /******************************************************************************/
+#ifndef VOLTAGE_DIVIDER_CONFIG_FAST
 uint16_t VoltageDivider_GetADCRaw(VOLTAGE_DIVIDER_T * div, uint16_t voltage)
 {
-	return (voltage*div->VPerADCBottom + (div->VPerADCTop/2) )/div->VPerADCTop;
+	return ((voltage * div->VPerADCDivisor + (div->VPerADCFactor / 2)) / div->VPerADCFactor); // voltage*(R2*ADC_MAX)/((R1+R2)*VREF) // add (div->VPerADCFactor/2) to round up .5
+}
+#else
+uint16_t VoltageDivider_GetADCRaw(VOLTAGE_DIVIDER_T * div, uint16_t voltage)
+{
+	return ((voltage * div->VPerADCDivisor) >> (16 - div->ADCBits)); // voltage*(R2*ADC_MAX)/((R1+R2)*VREF) // add (div->VPerADCFactor/2) to round up .5
+}
+#endif
+
+void VoltageDivider_SetR1(VOLTAGE_DIVIDER_T * div, uint32_t r1)
+{
+
 }
 
-void VoltageDivider_InitPercentage(VOLTAGE_DIVIDER_T * div, uint32_t r1Ratio, uint32_t r2Ratio, uint8_t vRef, uint16_t adcMax, uint16_t v100Percent, uint16_t v0Percent)
+void VoltageDivider_InitPercentage(VOLTAGE_DIVIDER_T * div, uint32_t r1Ratio, uint32_t r2Ratio, uint8_t vRef, uint16_t adcBits, uint16_t v100Percent, uint16_t v0Percent)
 {
 //	div->V100Percent;
 //	div->V0Percent;
 //	div->VPercentPerADCU;
 //	div->V0PercentADCU;
 }
-

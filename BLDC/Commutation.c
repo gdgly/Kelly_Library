@@ -35,7 +35,7 @@ void Commutation_SetDirectionReverse(COMMUTATION_T * commutation)
 
 COMMUTATION_DIRECTION_T Commutation_GetDirection(COMMUTATION_T * commutation)
 {
-	return commutation->Direction;
+	return (commutation->Direction);
 }
 
 

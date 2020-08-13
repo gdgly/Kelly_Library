@@ -8,12 +8,12 @@
 #ifndef BLDC_H_
 #define BLDC_H_
 
-#include "Monitor.h"
-#include "Speed.h"
-#include "Commutation.h"
-#include "PID.h"
-#include "VoltageDivider.h"
-#include "Waveform.h"
+#include "Monitor/Monitor.h"
+#include "Speed/Speed.h"
+#include "Commutation/Commutation.h"
+#include "PID/PID.h"
+#include "VoltageDivider/VoltageDivider.h"
+#include "Waveform/Waveform.h"
 
 #include <stdbool.h>
 #include <stdint.h>
