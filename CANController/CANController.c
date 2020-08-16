@@ -169,7 +169,7 @@ bool CANController_IsTxComplete(CANController_t * p_canController)
 void CANController_SetTxFrame(CANController_t * p_canController, CAN_ID_t id, CAN_FrameFormat_t format, CAN_FrameType_t type, uint8_t length, uint8_t * p_data)
 {
     /* Prepare Tx Frame for sending. */
-	p_canController->TxFrame.ID.ID 	= id;
+	p_canController->TxFrame.ID 	= id;
 	p_canController->TxFrame.Format 	= format;
 	p_canController->TxFrame.Type 	= type;
 	p_canController->TxFrame.DLR 		= length;

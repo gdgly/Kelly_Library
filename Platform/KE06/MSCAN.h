@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "CANController/CANController.h"
+
 bool KE06_MSCAN_GetTxBufferEmptyFlag(void);
 bool KE06_MSCAN_GetRxBufferFullFlag(void);
 void KE06_MSCAN_EnableTxBufferEmptyInterrupt(void);

@@ -38,29 +38,29 @@ typedef enum
     CAN_STATE_COMPLETE,
 } CAN_MessageBufferState_t;
 
-/*! @brief MSCAN IDR1 struct. */
-typedef struct
-{
-    uint8_t EID17_15 : 3;           /*!< Extended Format Identifier 17-15*/
-    uint8_t R_TEIDE : 1;            /*!< ID Extended */
-    uint8_t R_TSRR : 1;             /*!< Substitute Remote Request */
-    uint8_t EID20_18_OR_SID2_0 : 3; /*!< Extended Format Identifier 18-20 or standard format bit 0-2*/
-} MSCAN_IDR1Type;
-
-/*! @brief MSCAN IDR3 struct. */
-typedef struct
-{
-    uint8_t ERTR : 1;   /*!< Remote Transmission Request*/
-    uint8_t EID6_0 : 7; /*!< Extended Format Identifier 6-0*/
-} MSCAN_IDR3Type;
-
-/*! @brief MSCAN idr1 and idr3 union. */
-typedef union
-{
-    MSCAN_IDR1Type IDR1; /*!< structure for identifier 1 */
-    MSCAN_IDR3Type IDR3; /*!< structure for identifier 3 */
-    uint8_t Bytes;       /*!< bytes */
-} IDR1_3_UNION;
+///*! @brief MSCAN IDR1 struct. */
+//typedef struct
+//{
+//    uint8_t EID17_15 : 3;           /*!< Extended Format Identifier 17-15*/
+//    uint8_t R_TEIDE : 1;            /*!< ID Extended */
+//    uint8_t R_TSRR : 1;             /*!< Substitute Remote Request */
+//    uint8_t EID20_18_OR_SID2_0 : 3; /*!< Extended Format Identifier 18-20 or standard format bit 0-2*/
+//} MSCAN_IDR1Type;
+//
+///*! @brief MSCAN IDR3 struct. */
+//typedef struct
+//{
+//    uint8_t ERTR : 1;   /*!< Remote Transmission Request*/
+//    uint8_t EID6_0 : 7; /*!< Extended Format Identifier 6-0*/
+//} MSCAN_IDR3Type;
+//
+///*! @brief MSCAN idr1 and idr3 union. */
+//typedef union
+//{
+//    MSCAN_IDR1Type IDR1; /*!< structure for identifier 1 */
+//    MSCAN_IDR3Type IDR3; /*!< structure for identifier 3 */
+//    uint8_t Bytes;       /*!< bytes */
+//} IDR1_3_UNION;
 
 /*! @brief MSCAN extend ID struct. */
 typedef struct

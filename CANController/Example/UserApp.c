@@ -1,6 +1,6 @@
 #include <Platform/KE06/MSCAN.h>
 
-#include "CANController.h"
+#include "CANController/CANController.h"
 #include "MKE06Z4.h"
 
 #include <stdbool.h>
@@ -24,7 +24,7 @@ void CAN_Tx_ISR(void) //MSCAN_2_IRQHandler,      // 47: MSCAN Tx, Err and Wake-u
 }
 
 
-void main(void)
+void mainApp(void)
 {
 	uint32_t txID 				= 0x1;
 	CAN_FrameFormat_t format 	= CAN_FRAME_FORMAT_EXTEND;

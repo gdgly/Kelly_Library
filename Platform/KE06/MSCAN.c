@@ -76,7 +76,7 @@ void KE06_MSCAN_WriteTxMessageBuffer(CAN_Frame_t * p_txFrame)
     uint8_t i;
 
     /* Write IDR. */
-    if (kMSCAN_FrameFormatExtend == p_txFrame->format)
+    if (kMSCAN_FrameFormatExtend == p_txFrame->Format)
     {
         /* Deal with Extended frame. */
         sIDR1.IDR1.EID20_18_OR_SID2_0 = p_txFrame->ID.ExtID.EID20_18;
@@ -84,7 +84,7 @@ void KE06_MSCAN_WriteTxMessageBuffer(CAN_Frame_t * p_txFrame)
         sIDR1.IDR1.R_TEIDE            = 1U;
         sIDR1.IDR1.EID17_15           = p_txFrame->ID.ExtID.EID17_15;
         sIDR3.IDR3.EID6_0             = p_txFrame->ID.ExtID.EID6_0;
-        sIDR3.IDR3.ERTR               = (kMSCAN_FrameTypeRemote == p_txFrame->type) ? 1U : 0U;
+        sIDR3.IDR3.ERTR               = (kMSCAN_FrameTypeRemote == p_txFrame->Type) ? 1U : 0U;
         /* Write into MB structure. */
         mb.EIDR0 = p_txFrame->ID.ExtID.EID28_21;
         mb.EIDR1 = sIDR1.Bytes;
@@ -113,7 +113,7 @@ void KE06_MSCAN_WriteTxMessageBuffer(CAN_Frame_t * p_txFrame)
     }
 
     /* 1.Read TFLG to get the empty transmitter buffers. */
-    txEmptyFlag = MSCAN_GetTxBufferEmptyFlag(base);
+    txEmptyFlag = MSCAN_GetTxBufferEmptyFlag(MSCAN);
 
 //    if ((uint8_t)kMSCAN_TxBufFull != txEmptyFlag)
 //    {
@@ -160,7 +160,7 @@ void KE06_MSCAN_ReadRxMessageBuffer(CAN_Frame_t * p_rxFrame)
 
         if (kMSCAN_FrameFormatExtend == p_rxFrame->Format) /* Extended frame. */
         {
-            p_rxFrame->type                   = (mscan_frame_type_t)(sIDR3.IDR3.ERTR);
+            p_rxFrame->Type                   = (mscan_frame_type_t)(sIDR3.IDR3.ERTR);
             p_rxFrame->ID.ExtID.EID28_21 = MSCAN_ReadRIDR0(MSCAN);
             p_rxFrame->ID.ExtID.EID20_18 = sIDR1.IDR1.EID20_18_OR_SID2_0;
             p_rxFrame->ID.ExtID.EID17_15 = sIDR1.IDR1.EID17_15;
@@ -169,7 +169,7 @@ void KE06_MSCAN_ReadRxMessageBuffer(CAN_Frame_t * p_rxFrame)
         }
         else /* Standard frame. */
         {
-            p_rxFrame->type                  = (mscan_frame_type_t)(sIDR1.IDR1.R_TSRR);
+            p_rxFrame->Type                  = (mscan_frame_type_t)(sIDR1.IDR1.R_TSRR);
             p_rxFrame->ID.StdID.EID10_3 = MSCAN_ReadRIDR0(MSCAN);
             p_rxFrame->ID.StdID.EID2_0  = sIDR1.IDR1.EID20_18_OR_SID2_0;
         }
