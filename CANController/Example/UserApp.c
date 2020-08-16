@@ -52,7 +52,7 @@ void main(void)
 	);
 
 	//CANController_SetTxFrame(&CANController1, uint32_t id, CAN_FrameFormat_t format, CAN_FrameType_t type, uint8_t length, uint8_t * p_data)
-	CANController_SetTxFrame(&CANController1, txID, format, type, length, uint8_t * p_data);
+	CANController_SetTxFrame(&CANController1, txID, format, type, length, &data);
     CANController_SendFrame(&CANController1);
 	CANController_ReceiveFrame(&CANController1);
 
