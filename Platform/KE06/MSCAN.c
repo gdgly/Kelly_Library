@@ -156,9 +156,9 @@ void KE06_MSCAN_ReadRxMessageBuffer(CAN_Frame_t * p_rxFrame)
 //    {
         sIDR1.Bytes      = MSCAN_ReadRIDR1(MSCAN);
         sIDR3.Bytes      = MSCAN_ReadRIDR3(MSCAN);
-        p_rxFrame->format = (mscan_frame_format_t)(sIDR1.IDR1.R_TEIDE);
+        p_rxFrame->Format = (mscan_frame_format_t)(sIDR1.IDR1.R_TEIDE);
 
-        if (kMSCAN_FrameFormatExtend == p_rxFrame->format) /* Extended frame. */
+        if (kMSCAN_FrameFormatExtend == p_rxFrame->Format) /* Extended frame. */
         {
             p_rxFrame->type                   = (mscan_frame_type_t)(sIDR3.IDR3.ERTR);
             p_rxFrame->ID.ExtID.EID28_21 = MSCAN_ReadRIDR0(MSCAN);
