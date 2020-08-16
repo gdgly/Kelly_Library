@@ -35,6 +35,7 @@ typedef enum
     CAN_STATE_TX_DATA   	= 0x3, /*!< MB transmitting.*/
     CAN_STATE_TX_REMOTE 	= 0x4, /*!< MB transmitting remote request.*/
     CAN_STATE_RX_FIFO   	= 0x5, /*!< RxFIFO receiving.*/
+    CAN_STATE_COMPLETE,
 } CAN_MessageBufferState_t;
 
 typedef union
@@ -99,6 +100,7 @@ typedef struct
 	void (*MSCAN_EnableRxBufferFullInterrupt)(void);
 	void (*MSCAN_DisableTxBufferEmptyInterrupt)(void);
 	void (*MSCAN_DisableRxBufferFullInterrupt)(void);
+	void (*MSCAN_ClearRxBufferFullFlag)(void);
 	void (*MSCAN_ReadRxMessageBuffer)(CAN_Frame_t * p_rxFrame);
 	void (*MSCAN_WriteTxMessageBuffer)(CAN_Frame_t * p_rxFrame);
 	void (*MSCAN_RxCompleteCallback)(void);
