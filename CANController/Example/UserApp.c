@@ -26,28 +26,38 @@ void CAN_Tx_ISR(void) //MSCAN_2_IRQHandler,      // 47: MSCAN Tx, Err and Wake-u
 
 void main(void)
 {
+	uint32_t txID 				= 0x1;
+	CAN_FrameFormat_t format 	= CAN_FRAME_FORMAT_EXTEND;
+	CAN_FrameType_t type 		= CAN_FRAME_TYPE_DATA;
+	uint32_t length 			= 8;
+	uint32_t data[2] 			= {0x44332211, 0x88776655};
+
+	KE06_MSCAN_Init(2400000);
+
 	CANController_Init
 	(
-		&CANController1,
-
-		MSCAN1_GetRxBufferFullFlag,
-		MSCAN1_GetTxBufferEmptyFlag,
-		MSCAN1_SetBaudRate
+			KE06_MSCAN_GetRxBufferFullFlag,
+			KE06_MSCAN_GetTxBufferEmptyFlag ,
+			KE06_MSCAN_EnableTxBufferEmptyInterrupt,
+			KE06_MSCAN_EnableRxBufferFullInterrupt,
+			KE06_MSCAN_DisableTxBufferEmptyInterrupt,
+			KE06_MSCAN_DisableRxBufferFullInterrupt,
+			KE06_MSCAN_ClearRxBufferFullFlag,
+			KE06_MSCAN_ReadRxMessageBuffer,
+			KE06_MSCAN_WriteTxMessageBuffer,
+			0,
+			0,
+			KE06_MSCAN_SetBaudRate,
+			500000
 	);
 
-    /* Prepare Tx Frame for sending. */
-    txFrame.ID_Type.ID = NODE_ID1;
-    txFrame.format     = kMSCAN_FrameFormatExtend;
-    txFrame.type       = kMSCAN_FrameTypeData;
-    txFrame.DLR        = 8;
-    txFrame.dataWord0  = 0x44332211;
-    txFrame.dataWord1  = 0x88776655;
+	//CANController_SetTxFrame(&CANController1, uint32_t id, CAN_FrameFormat_t format, CAN_FrameType_t type, uint8_t length, uint8_t * p_data)
+	CANController_SetTxFrame(&CANController1, txID, format, type, length, uint8_t * p_data);
+    CANController_SendFrame(&CANController1);
+	CANController_ReceiveFrame(&CANController1);
 
-    PRINTF("Send message!\r\n");
-    PRINTF("tx word0 = 0x%x\r\n", txFrame.dataWord0);
-    PRINTF("tx word1 = 0x%x\r\n", txFrame.dataWord1);
-
-	CAN_SendFrame(&CANController1);
-
-	while(1);
+	while(1)
+	{
+		CANController_ProcRxPoll(&CANController1);
+	}
 }

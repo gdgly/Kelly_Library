@@ -38,7 +38,7 @@ void KE06_MSCAN_DisableRxBufferFullInterrupt(void)
 	MSCAN->CANRIER &= ~MSCAN_CANRIER_RXFIE_MASK;
 }
 
-void KE_06_MSCAN_ClearRxBufferFullFlag(void)
+void KE06_MSCAN_ClearRxBufferFullFlag(void)
 {
 	MSCAN->CANRFLG |= MSCAN_CANRFLG_RXF_MASK;
 }
