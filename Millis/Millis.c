@@ -45,7 +45,7 @@ void SysTick_ISR(void)
 
  uint32_t Micros(void)
 {
-	#define F_CPU 40000000
+	//#define F_CPU 40000000
 	uint32_t micros = (F_CPU / 1000 - 1) - (SYST_CVR / (F_CPU / 1000000)); //SYST_CVR ticks down
 	return MillisTickCount * 1000 + micros;
 }

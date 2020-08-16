@@ -29,9 +29,7 @@
 
 	ADC = VIN*DIV/VADC_RES = VIN*(R2*ADC_MAX)/((R1+R2)*VREF)
 	VIN = ADC*VADC_RES/DIV = ADC*(VREF*(R1+R2))/(ADC_MAX*R2)
-
-	VIN_PER_ADC == VIN/ADC:
-	VIN_PER_ADC = VADC_RES/DIV = VREF*(R1 + R2)/(ADC_MAX*R2)
+	VIN/ADC = VADC_RES/DIV = VREF*(R1 + R2)/(ADC_MAX*R2)
 */
 /******************************************************************************/
 #include "VoltageDivider/VoltageDivider.h"
@@ -58,7 +56,7 @@ void VoltageDivider_Init(VOLTAGE_DIVIDER_T * div, uint32_t r1, uint32_t r2, uint
 void VoltageDivider_Init(VOLTAGE_DIVIDER_T * div, uint32_t r1, uint32_t r2, uint8_t vRef, uint8_t adcBits)
 {
 	div->VPerADCFactor = ((vRef * (r1 + r2)) << (16 - adcBits)) / r2; 	// (VREF*(R1 + R2) << 16)/(ADC_MAX*R2)
-	div->VPerADCDivisor = ((r2 << (adcBits)) / (vRef * (r1 + r2)));		// ((ADC_MAX*R2) << 16)/(VREF*(R1 + R2))
+	div->VPerADCDivisor = ((r2 << adcBits) / (vRef * (r1 + r2)));		// ((ADC_MAX*R2) << 16)/(VREF*(R1 + R2))
 	div->ADCBits = adcBits;
 }
 #endif
@@ -83,7 +81,6 @@ uint16_t VoltageDivider_GetVoltage(VOLTAGE_DIVIDER_T * div, uint16_t adcRaw)
 	return ((adcRaw * div->VPerADCFactor) >> 16);
 }
 #endif
-
 
 /******************************************************************************/
 /*!
@@ -124,16 +121,16 @@ uint16_t VoltageDivider_GetADCRaw(VOLTAGE_DIVIDER_T * div, uint16_t voltage)
 #else
 uint16_t VoltageDivider_GetADCRaw(VOLTAGE_DIVIDER_T * div, uint16_t voltage)
 {
-	return ((voltage * div->VPerADCDivisor) >> (16 - div->ADCBits)); // voltage*(R2*ADC_MAX)/((R1+R2)*VREF) // add (div->VPerADCFactor/2) to round up .5
+	return ((voltage * div->VPerADCDivisor) >> (16 - div->ADCBits));
 }
 #endif
 
-void VoltageDivider_SetR1(VOLTAGE_DIVIDER_T * div, uint32_t r1)
+void VoltageDivider_SetDivider(VOLTAGE_DIVIDER_T * div, uint32_t r1, uint32_t r2)
 {
 
 }
 
-void VoltageDivider_InitPercentage(VOLTAGE_DIVIDER_T * div, uint32_t r1Ratio, uint32_t r2Ratio, uint8_t vRef, uint16_t adcBits, uint16_t v100Percent, uint16_t v0Percent)
+void VoltageDivider_InitPercentage(VOLTAGE_DIVIDER_T * div, uint32_t r1, uint32_t r2, uint8_t vRef, uint16_t adcBits, uint16_t v100Percent, uint16_t v0Percent)
 {
 //	div->V100Percent;
 //	div->V0Percent;
