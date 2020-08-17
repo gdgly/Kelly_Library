@@ -36,10 +36,12 @@ void S32K_MSCAN_DisableRxBufferFullInterrupt(void)
 }
 
 void S32K_MSCAN_ClearRxBufferFullFlag(void)
+{
 }
 
 
 void S32K_MSCAN_SetBaudRate(uint32_t baudRate)
+{
 }
 
 
