@@ -56,7 +56,7 @@ void VoltageDivider_Init(VOLTAGE_DIVIDER_T * div, uint32_t r1, uint32_t r2, uint
 void VoltageDivider_Init(VOLTAGE_DIVIDER_T * div, uint32_t r1, uint32_t r2, uint8_t vRef, uint8_t adcBits)
 {
 	div->VPerADCFactor = ((vRef * (r1 + r2)) << (16 - adcBits)) / r2; 	// (VREF*(R1 + R2) << 16)/(ADC_MAX*R2)
-	div->VPerADCDivisor = ((r2 << adcBits) / (vRef * (r1 + r2)));		// ((ADC_MAX*R2) << 16)/(VREF*(R1 + R2))
+	div->VPerADCDivisor = ((r2 << 16) / (vRef * (r1 + r2)));		// ((R2) << 16)/(VREF*(R1 + R2))
 	div->ADCBits = adcBits;
 }
 #endif

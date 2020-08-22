@@ -51,9 +51,10 @@ void CANController_TxISR(CANController_t * p_canController)
 
 			case (uint8_t)CAN_STATE_TX_REMOTE:
 					//status            = kStatus_MSCAN_TxSwitchToRx;
-				p_canController->MSCAN_DisableTxBufferEmptyInterrupt(); // SLi- Should this be here?
-				p_canController->RxState = (uint8_t)CAN_STATE_RX_REMOTE;
+				p_canController->MSCAN_DisableTxBufferEmptyInterrupt();
 				p_canController->TxState = CAN_STATE_IDLE;
+				p_canController->MSCAN_EnableRxBufferFullInterrupt();
+				p_canController->RxState = (uint8_t)CAN_STATE_RX_REMOTE;
 				break;
 
 			default:
@@ -113,7 +114,7 @@ void CANController_Send(CANController_t * p_canController, uint32_t id, CAN_Fram
 //
 //}
 
-void CANController_SendFrame(CANController_t * p_canController)
+void CANController_StartTxFrame(CANController_t * p_canController)
 {
 //	status_t status;
 
@@ -146,7 +147,7 @@ void CANController_SendFrame(CANController_t * p_canController)
 //
 //}
 
-void CANController_ReceiveFrame(CANController_t * p_canController)
+void CANController_StartRxFrame(CANController_t * p_canController)
 {
     if (p_canController->RxState != CAN_STATE_IDLE) return;
 
@@ -157,21 +158,21 @@ void CANController_ReceiveFrame(CANController_t * p_canController)
 
 bool CANController_IsRxComplete(CANController_t * p_canController)
 {
-    return p_canController->IsRxComplete;
+    return (p_canController->IsRxComplete);
 }
 
 bool CANController_IsTxComplete(CANController_t * p_canController)
 {
-    return p_canController->IsTxComplete;
+    return (p_canController->IsTxComplete);
 }
 
-
+//Set all frame information including data
 void CANController_SetTxFrame(CANController_t * p_canController, CAN_ID_t id, CAN_FrameFormat_t format, CAN_FrameType_t type, uint8_t length, uint8_t * p_data)
 {
     /* Prepare Tx Frame for sending. */
-	p_canController->TxFrame.ID 	= id;
+	p_canController->TxFrame.ID 		= id;
 	p_canController->TxFrame.Format 	= format;
-	p_canController->TxFrame.Type 	= type;
+	p_canController->TxFrame.Type 		= type;
 	p_canController->TxFrame.DLR 		= length;
 
 	for (uint8_t i = 0; i < length; i++)
@@ -180,22 +181,53 @@ void CANController_SetTxFrame(CANController_t * p_canController, CAN_ID_t id, CA
 	}
 }
 
-void CANController_GetRxFrame(CANController_t * p_canController, uint32_t * p_id, uint8_t * p_data)
+//Set all frame information expect data
+void CANController_SetTxFrameConfig(CANController_t * p_canController, CAN_ID_t id, CAN_FrameFormat_t format, CAN_FrameType_t type, uint8_t length)
 {
-
+	p_canController->TxFrame.ID 		= id;
+	p_canController->TxFrame.Format 	= format;
+	p_canController->TxFrame.Type 		= type;
+	p_canController->TxFrame.DLR 		= length;
 }
 
-void CANController_ProcRxPoll(CANController_t * p_canController)
-{
-	 uint32_t * p_id;
-	 uint8_t * p_data;
 
-	 if (CANController_IsRxComplete(p_canController))
-	 {
-		 CANController_GetRxFrame(p_canController, p_id, p_data);
-		 //parse;
-		 //table function;
-		 CANController_ReceiveFrame(p_canController); //next frame
-	 }
+void CANController_SetTxFrameDataByte(CANController_t * p_canController, uint8_t dataByte, uint8_t dataIndex)
+{
+	p_canController->TxFrame.DSR[dataIndex]  = dataByte;
 }
+
+void CANController_GetRxFrameData(CANController_t * p_canController, uint32_t * p_id, uint8_t * p_data)
+{
+	&p_id = p_canController->RxFrame.ID;
+
+	for (uint8_t i = 0; i < p_canController->RxFrame.DLR; i++)
+	{
+		p_data[i] = p_canController->RxFrame.DSR[i];
+	}
+}
+
+CAN_Frame_t * CANController_GetRxFrame(CANController_t * p_canController)
+{
+	return (p_canController->RxFrame);
+}
+
+CAN_Frame_t * CANController_GetTxFrame(CANController_t * p_canController)
+{
+	return (p_canController->TxFrame);
+}
+
+
+//void CANController_ProcRxPoll(CANController_t * p_canController)
+//{
+//	 uint32_t * p_id;
+//	 uint8_t * p_data;
+//
+//	 if (CANController_IsRxComplete(p_canController))
+//	 {
+//		 CANController_GetRxFrame(p_canController, p_id, p_data);
+//		 //parse;
+//		 //table function;
+//		 CANController_ReceiveFrame(p_canController); //next frame
+//	 }
+//}
 

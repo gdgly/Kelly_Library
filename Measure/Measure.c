@@ -21,35 +21,36 @@ static inline bool StartADC(MEASURE_T * measure, MEASURE_CHANNEL_T channels, uin
 {
 	uint8_t i;
 
-	if (channelCount > measure->ADC_SampleChannelCountMax)	return false;
+//	if (channelCount > measure->ADC_SampleChannelCountMax)	return false;
 	if (measure->ADC_GetActiveFlag() && !overwrite)			return false;
 
 	// for modifying measure->ADC_SampleChannels of same measure struct. can occur without calling inside interrupts, i.e need to be implemented if global is not
 	if (measure->ADC_GetActiveFlag() && overwrite) measure->ADC_DisableIRQ();
 
-	if (DisableIRQ) DisableIRQ(); // need to be implemented if calling from inside interrupts
+	// need to be implemented if calling from inside interrupts. e.g ftm interrupt call occurs during main call
+	if (DisableIRQ) DisableIRQ();
 
 	if (channelCount > 1)
 	{
 		for (i = 0; i < channelCount; i++)
 		{
-			if (channels.ChannelGroup[i] > ChannelCount - 1) // invalid channel
-			{
-				EnableIRQ();
-				return false;
-			}
+//			if (channels.ChannelGroup[i] > ChannelCount - 1) // invalid channel
+//			{
+//				EnableIRQ();
+//				return false;
+//			}
 			//ChannelResultBuffer[channels.ChannelGroup[i]] = 0; //todo settings to reset before measure
 			measure->ADC_SampleChannels[i] = ChannelToADCPin[channels.ChannelGroup[i]];
 		}
 	}
 	else
 	{
-		if (channels.ChannelSingle > ChannelCount - 1)
-		{
-			EnableIRQ();
-			return false;
-		}
-		//ChannelResultBuffer[channels.ChannelSingle] = 0;
+//		if (channels.ChannelSingle > ChannelCount - 1)
+//		{
+//			EnableIRQ();
+//			return false;
+//		}
+		//ChannelResultBuffer[channels.ChannelSingle] = 0; //todo settings to reset before measure
 		measure->ADC_SampleChannels[0] = ChannelToADCPin[channels.ChannelSingle];
 	}
 
@@ -94,6 +95,12 @@ volatile ADC_DATA_T * Measure_GetChannelPtr(MEASURE_T * measure, uint8_t channel
 {
 	if (channel < ChannelCount)	return &ChannelResultBuffer[channel];
 	else 						return 0;
+}
+
+
+void Measure_ResetChannelResult(MEASURE_T * measure, uint8_t channel)
+{
+	ChannelResultBuffer[channel] = 0;
 }
 
 void Measure_InitSample

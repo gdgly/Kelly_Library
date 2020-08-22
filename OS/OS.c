@@ -98,6 +98,12 @@ uint32_t LiteFXOS_ProcThreadNRepeat(LITE_FX_OS_THREAD_T * thread, uint32_t n)
 	return count;
 }
 
+bool LiteFXOS_ProcThreadFunction(LITE_FX_OS_THREAD_T * thread, void (*function)(void))
+{
+
+}
+
+
 /*-----------------------------------------------------------------------------
   Thread Init functions - assigns all parameters necessary to run
  *----------------------------------------------------------------------------*/
