@@ -36,7 +36,7 @@ void CAN_Tx_ISR(void) //MSCAN_2_IRQHandler,      // 47: MSCAN Tx, Err and Wake-u
 void ProcessCANTx(void)
 {
 	MotorRPM++;
-	SetControllerThrottle(MotorRPM);//PacketSpeed_RPMOffset10000 = MotorRPM + 10000;
+	SetPacketThrottle(MotorRPM);//PacketSpeed_RPMOffset10000 = MotorRPM + 10000;
 
 	BuildTxPacket(CANController_GetTxFrame(&CANController1));
     CANController_StartTxFrame(&CANController1);

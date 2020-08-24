@@ -69,12 +69,16 @@ void BuildTxPacket(CAN_Frame_t * p_txFrame)
 //
 uint16_t GetControllerThrottle(void) //convert external code to Kelly controller value.
 {
+	uint8_t x;
 
+	return PacketThrottle*x;
 }
 
 uint16_t GetControllerBrake(void) //convert external code to Kelly controller value.
 {
+	uint8_t x;
 
+	return PacketBrake*x;
 }
 
 void SetPacketSpeed(uint16_t controllerRPM) //convert Kelly controller value to external code.
@@ -84,10 +88,10 @@ void SetPacketSpeed(uint16_t controllerRPM) //convert Kelly controller value to 
 
 void SetPacketCurrent(uint16_t controllerCurrent) //convert Kelly controller value to external code.
 {
-	PacketMotorCurent_TenthAmp
+	PacketMotorCurent_TenthAmp = controllerCurrent;
 }
 
-bool SetPacketError()
+bool SetPacketErrorPowerOnReset(bool isOn)
 {
-
+	ErrorFlagHigh.Reset = isOn;
 }
