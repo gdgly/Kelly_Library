@@ -36,7 +36,7 @@ void CAN_Tx_ISR(void) //MSCAN_2_IRQHandler,      // 47: MSCAN Tx, Err and Wake-u
 void ProcessCANTx(void)
 {
 	MotorRPM++;
-	PacketSpeed_RPMOffset10000 = MotorRPM + 10000;
+	SetControllerThrottle(MotorRPM);//PacketSpeed_RPMOffset10000 = MotorRPM + 10000;
 
 	BuildTxPacket(CANController_GetTxFrame(&CANController1));
     CANController_StartTxFrame(&CANController1);
@@ -47,8 +47,8 @@ void ProcessCANRx(void)
 	if (CANController_IsRxComplete(&CANController1))
 	{
 		ParseRxPacket(CANController_GetRxFrame(&CANController1));
-		MotorPWM = PacketThrottle * 512 / 1000;
-		//GetKellyThrottle(void);
+		MotorPWM = GetControllerThrottle(); //PacketThrottle * 512 / 1000;
+		//
 		//UpdatePWM();
 		CANController_StartRxFrame(&CANController1); //start next frame
 	}
@@ -57,9 +57,6 @@ void ProcessCANRx(void)
 void mainApp(void)
 {
 	uint32_t txID 				= 0x1;
-	CAN_FrameFormat_t format 	= CAN_FRAME_FORMAT_EXTEND;
-	CAN_FrameType_t type 		= CAN_FRAME_TYPE_DATA;
-	uint32_t length 			= 8;
 
 	KE06_MSCAN_Init(2400000);
 
@@ -86,7 +83,8 @@ void mainApp(void)
 	);
 
 	//CANController_SetTxFrame(&CANController1, uint32_t id, CAN_FrameFormat_t format, CAN_FrameType_t type, uint8_t length, uint8_t * p_data)
-	CANController_SetTxFrame(&CANController1, txID, format, type, length, &Data);
+	//CANController_SetTxFrameConfig(&CANController1, txID, format, type, length);
+	CANController_SetTxFrame(&CANController1, txID, CAN_FRAME_FORMAT_EXTEND, CAN_FRAME_TYPE_DATA, 8, &Data);
 
 	CANController_StartRxFrame(&CANController1);
 

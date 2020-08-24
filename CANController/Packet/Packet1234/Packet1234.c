@@ -1,0 +1,13 @@
+/*
+ * Packet.h
+ *
+ *  Created on: Aug 22, 2020
+ *      Author: FireSourcery
+ */
+
+#ifndef KELLY_LIBRARY_CANCONTROLLER_PACKET_PACKET_H_
+#define KELLY_LIBRARY_CANCONTROLLER_PACKET_PACKET_H_
+
+
+
+#endif /* KELLY_LIBRARY_CANCONTROLLER_PACKET_PACKET_H_ */
