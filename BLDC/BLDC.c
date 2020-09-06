@@ -5,7 +5,7 @@
  *      Author: FireSourcery
  */
 
-#include "BLDC.h"
+#include "BLDC/BLDC.h"
 
 /*-----------------------------------------------------------------------------
   Process

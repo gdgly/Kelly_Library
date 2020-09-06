@@ -9,6 +9,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+// runs after all items in fifo are processed.
+// only 1 channel in fifo is processed every hw trigger.
+// entire fifo is processed using software trigger.
+// void ADC0_IRQHandler(void)
+
 
 /*-----------------------------------------------------------------------------
   ADC hardware functions fed to Measure module

@@ -3,16 +3,14 @@
 //ADC Wrapper Module
 
 // Module Shared
-static volatile ADC_DATA_T *	ChannelResultBuffer;	/*!< Measure Result Buffer, measure channel index*/
-static volatile uint32_t *	 	ChannelSumBuffer;		/*!< sum if multiple measurements are required*/
-static const uint8_t * 			ChannelToADCPin;		/*!< Map to translate index channels to ADC pin channels */
+static volatile ADC_DATA_T *	p_ChannelResultBuffer;	/*!< Measure Result Buffer, measure/virtual channel index*/
+static volatile uint32_t *	 	p_ChannelSumBuffer;		/*!< sum if multiple measurements are required*/
+static const uint8_t * 			p_ChannelToADCPin;		/*!< Map to translate index channels to ADC pin channels */
 static uint8_t					ChannelCount;			/*!< Size of Result Buffer, ADC channel count */
 //extern const uint8_t MEASURE_CHANNEL_TO_ADC_PIN[]; // User define, shared for all adcs and samples
 //extern volatile ADC_DATA_T 	Measure_ChannelResultBuffer[];		/*!< Measure Result Buffer, measure channel index*/
 //extern volatile uint32_t 	Measure_ChannelSumBuffer[];			/*!< sum if multiple measurements are required*/
 //#define MEASURE_CHANNEL_COUNT (sizeof(Measure_ChannelResultBuffer)/sizeof(ADC_DATA_T))
-
-
 
 static void (*DisableIRQ)(void);	/*!< critical section */
 static void (*EnableIRQ)(void);		/*!< critical section */
@@ -40,7 +38,7 @@ static inline bool StartADC(MEASURE_T * measure, MEASURE_CHANNEL_T channels, uin
 //				return false;
 //			}
 			//ChannelResultBuffer[channels.ChannelGroup[i]] = 0; //todo settings to reset before measure
-			measure->ADC_SampleChannels[i] = ChannelToADCPin[channels.ChannelGroup[i]];
+			measure->ADC_SampleChannels[i] = p_ChannelToADCPin[channels.ChannelGroup[i]];
 		}
 	}
 	else
@@ -51,7 +49,7 @@ static inline bool StartADC(MEASURE_T * measure, MEASURE_CHANNEL_T channels, uin
 //			return false;
 //		}
 		//ChannelResultBuffer[channels.ChannelSingle] = 0; //todo settings to reset before measure
-		measure->ADC_SampleChannels[0] = ChannelToADCPin[channels.ChannelSingle];
+		measure->ADC_SampleChannels[0] = p_ChannelToADCPin[channels.ChannelSingle];
 	}
 
 	measure->ADC_Set(measure->ADC_SampleChannels, channelCount, hwTrigger);	 /*!< Enables adc complete interrupt */
@@ -70,11 +68,11 @@ inline void Measure_CompleteISR(MEASURE_T * measure)
 	{
 		//		if(measure->Sample->NRepeat)
 		for (i = 0; i < measure->Sample->ChannelCount; i++)
-			ChannelResultBuffer[measure->Sample->Channels.ChannelGroup[i]] = measure->ADC_GetResult(measure->ADC_SampleChannels[i]);
+			p_ChannelResultBuffer[measure->Sample->Channels.ChannelGroup[i]] = measure->ADC_GetResult(measure->ADC_SampleChannels[i]);
 	}
 	else
 	{
-		ChannelResultBuffer[measure->Sample->Channels.ChannelSingle] = measure->ADC_GetResult(measure->ADC_SampleChannels[0]);
+		p_ChannelResultBuffer[measure->Sample->Channels.ChannelSingle] = measure->ADC_GetResult(measure->ADC_SampleChannels[0]);
 	}
 
 	if (measure->Sample->OnEndISR) measure->Sample->OnEndISR();
@@ -87,20 +85,20 @@ void Measure_CompletePoll(MEASURE_T * measure)
 
 volatile ADC_DATA_T Measure_GetChannelResult(MEASURE_T * measure, uint8_t channel)
 {
-	if (channel < ChannelCount)	return ChannelResultBuffer[channel];
+	if (channel < ChannelCount)	return p_ChannelResultBuffer[channel];
 	else 						return 0;
 }
 
 volatile ADC_DATA_T * Measure_GetChannelPtr(MEASURE_T * measure, uint8_t channel)
 {
-	if (channel < ChannelCount)	return &ChannelResultBuffer[channel];
+	if (channel < ChannelCount)	return &p_ChannelResultBuffer[channel];
 	else 						return 0;
 }
 
 
 void Measure_ResetChannelResult(MEASURE_T * measure, uint8_t channel)
 {
-	ChannelResultBuffer[channel] = 0;
+	p_ChannelResultBuffer[channel] = 0;
 }
 
 void Measure_InitSample
@@ -212,6 +210,7 @@ void Measure_Disable(MEASURE_T * measure)
 	measure->ADC_Disable();
 }
 
+//Init per ADC
 void Measure_Init
 (
 	MEASURE_T * measure,
@@ -242,13 +241,13 @@ void Measure_InitModule
 	uint32_t *	 	channelSumBuffer,
 	uint8_t * 		channelToADCPinTable,
 	uint8_t			channelCount,
-	void (*disableGlobalIRQ)(void),
-	void (*enableGlobalIRQ)(void)
+	void (*disableGlobalIRQ)(void), 	//must implement if calling Measure to start ADC inside interrupts
+	void (*enableGlobalIRQ)(void) 		//must implement if calling Measure to start ADC inside interrupts
 )
 {
-	ChannelResultBuffer = channelResultBuffer;
-	ChannelSumBuffer = channelSumBuffer;
-	ChannelToADCPin = channelToADCPinTable;
+	p_ChannelResultBuffer = channelResultBuffer;
+	p_ChannelSumBuffer = channelSumBuffer;
+	p_ChannelToADCPin = channelToADCPinTable;
 	ChannelCount = channelCount;
 	DisableIRQ = disableGlobalIRQ;
 	EnableIRQ =	enableGlobalIRQ;
